@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOUNCE DUEL ONLINE v0.2</title>
+<style>
+:root{--bg:#090d18;--panel:#151e31;--line:#344666;--text:#eef4ff;--muted:#a8b6cf;--cyan:#55d9e8;--pink:#ff7899;--gold:#ffd36b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a2946,#080b13 70%);color:var(--text);font:15px system-ui,Arial,sans-serif}
+header{text-align:center;padding:20px 12px 10px}h1{letter-spacing:5px;font-size:clamp(28px,6vw,44px);margin:0}header p{color:var(--muted);margin:5px}
+main{max-width:900px;margin:auto;padding:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:12px}
+.setup{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fighter{border:1px solid var(--line);border-radius:12px;padding:12px}.fighter h2{font-size:17px;margin:0 0 8px}.blue{color:var(--cyan)}.pink{color:var(--pink)}
+select{width:100%;background:#263956;color:white;border:1px solid #52698e;border-radius:9px;padding:10px;margin:5px 0 12px;font-size:15px}
+.direction{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:210px;margin:8px auto}.direction button{font-size:21px;padding:9px}.direction button.chosen{outline:2px solid var(--gold);background:#405477}
+button{border:1px solid #52698e;background:#263956;color:var(--text);border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}button:hover{filter:brightness(1.2)}button:disabled{opacity:.4;cursor:not-allowed}.primary{background:#126174;border-color:#50d1e2}.danger{background:#572b40;border-color:#a24d6b}
+canvas{width:100%;height:auto;display:block;background:#070b14;border:2px solid #344767;border-radius:12px}
+.hud{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}.hpbox{flex:1;min-width:120px}.hptext{display:flex;justify-content:space-between;font-weight:800}.bar{height:10px;background:#34415a;border-radius:20px;overflow:hidden;margin-top:5px}.bar span{height:100%;display:block;background:var(--cyan)}.bar.pinkbar span{background:var(--pink)}
+.fighter-hud{display:none}.fighter-card{background:#101a2b;border:1px solid #45536d;border-radius:9px;padding:8px 9px;min-width:0}.fighter-card.team1{border-left:4px solid var(--cyan)}.fighter-card.team2{border-left:4px solid var(--pink)}.fighter-card.ready{border:2px solid #ffd36b;background:#302817;box-shadow:0 0 10px rgba(255,211,107,.28)}.fighter-head{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800}.fighter-note{color:#ffd36b;font-size:10px}.fighter-bar{height:8px;background:#34415a;border-radius:20px;overflow:hidden;margin-top:6px}.fighter-bar span{display:block;height:100%}
+.rarity-preview{display:inline-flex;align-items:center;gap:6px;margin:-7px 0 10px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.6px;background:#1b2a42;border:1px solid #52698e;color:#fff}.rarity-preview .rarity-dot{width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 8px currentColor}.rarity-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.45px;border:1px solid currentColor;white-space:nowrap}.second-slot{display:block}.ability-entry{margin:7px 0}.ability-toggle{width:100%;text-align:left;background:#1d2b43}.ability-detail{padding:8px 10px;margin-top:5px;border:1px solid var(--line);border-radius:9px;background:#0d1524}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.hint{font-size:13px;color:var(--muted);line-height:1.5}.hidden{display:none}.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+@media(max-width:580px){.setup{grid-template-columns:1fr}main{padding:9px}.fighter{padding:10px}}
+
+.online-panel{border:1px solid #397d91;background:linear-gradient(135deg,#10283a,#151e31);}
+.online-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.online-panel input,.online-panel select{width:100%;background:#263956;color:white;border:1px solid #52698e;border-radius:9px;padding:10px;margin:5px 0 10px;font-size:15px}
+.online-status{padding:9px;border-radius:8px;background:#0b1424;color:#b9d5e8;min-height:40px;margin-top:9px;white-space:pre-line}
+.room-code{font-size:26px;letter-spacing:5px;font-weight:900;color:#ffd36b;text-align:center;padding:8px}
+.online-player{display:flex;justify-content:space-between;padding:7px 9px;margin:5px 0;background:#0c1728;border-radius:7px}
+@media(max-width:600px){.online-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>BOUNCE DUEL</h1><p>Pilih mode, pilih karakter, dan bertarung!</p></header>
+<main>
+<section class="panel online-panel" id="onlinePanel">
+ <h2 style="margin:0 0 6px;color:#70e4f2">🌐 ONLINE — PRIVATE ROOM (BETA)</h2>
+ <p class="hint">Cipta room atau masukkan kod kawan. Mod 1v1 dan 2v2 disediakan. Setiap pemain mewakili satu pasukan.</p>
+ <label class="hint" for="onlineName">Nama pemain</label><input id="onlineName" maxlength="16" placeholder="Player" value="Player">
+ <div class="online-grid">
+  <div><label class="hint" for="onlineMode">Mod room (host)</label><select id="onlineMode"><option value="1v1">1v1 — 1 karakter setiap pasukan</option><option value="2v2">2v2 — 2 karakter setiap pasukan</option></select><button class="primary" id="createRoom" style="width:100%">CREATE ROOM</button></div>
+  <div><label class="hint" for="joinCode">Kod room kawan</label><input id="joinCode" maxlength="6" placeholder="CONTOH: A1B2C3" style="text-transform:uppercase"><button id="joinRoom" style="width:100%">JOIN ROOM</button></div>
+ </div>
+ <div id="roomArea" class="hidden">
+  <div class="room-code" id="roomCodeDisplay">------</div>
+  <div class="hint" style="text-align:center">Kongsi kod ini dengan kawan</div>
+  <div id="roomPlayers"></div>
+  <div class="online-grid" style="margin-top:9px"><button id="readyRoom">SAYA READY</button><button class="primary" id="startRoom">MULA ROOM</button></div>
+  <button class="danger" id="leaveRoom" style="width:100%;margin-top:8px">KELUAR ROOM</button>
+ </div>
+ <div class="online-status" id="onlineStatus">Sambungkan ke server. Pilih karakter secara berasingan; karakter yang dipilih lawan akan dikunci.</div>
+</section>
+<section class="panel" id="setupPanel">
+ <h2 style="margin:0 0 5px">Tetapan perlawanan</h2>
+ <label class="hint" for="modeSelect">Pilih mode</label>
+ <select id="modeSelect"><option value="1v1">⚔️ 1v1 — seorang lawan seorang</option><option value="2v2" selected>👥 2v2 — dua lawan dua</option></select>
+ <h2 id="setupTitle" style="margin:8px 0 5px">Pilih karakter Player 1 dan Player 2</h2><p class="hint" id="onlinePickHint">Setiap pemain memilih karakter untuk pasukannya sendiri. Pilihan lawan akan dikunci secara automatik.</p>
+ <p class="hint" id="setupHint">Pilih dua karakter untuk setiap pasukan. Tekan anak panah untuk tentukan arah awal pasukan; kedua-dua ahli bermula dengan arah itu.</p>
+ <div class="setup">
+  <div class="fighter">
+   <h2 class="blue">● PLAYER 1</h2>
+   <label for="char1a" class="hint">Karakter 1</label>
+   <select id="char1a"><option value="rabbit">🐰 Rabbit</option><option value="unicorn">🦄 Unicorn</option><option value="froga">🐸 Froga</option><option value="intruder">👾 Intruder</option><option value="eggo">🥚 Eggo</option><option value="anthone">🐜 Anthone</option><option value="ghost">👻 Ghost</option><option value="cowboy">🤠 Cowboy</option><option value="unknown">👽 Unknown</option><option value="snake">🐍 King Cobra</option><option value="tiger">🐯 Tiger</option><option value="robo">🤖 Robo</option><option value="zombie">🧟 Zombie</option><option value="orange">🐱 Orange</option><option value="judge">🧑‍⚖️ Judge</option><option value="reindeer">🦌 Reindeer</option><option value="puffer">🐡 Puffer</option><option value="trex">🦖 T-Rex</option><option value="dragon">🐉 Dragon</option><option value="elephant">🐘 Elephant</option><option value="kangaroo">🦘 Kangaroo</option><option value="demon">👹 Demon</option></select><div class="rarity-preview" id="rarity-char1a"></div>
+   <div class="second-slot" id="slot1b"><label for="char1b" class="hint">Karakter 2</label>
+   <select id="char1b"><option value="unicorn">🦄 Unicorn</option><option value="rabbit">🐰 Rabbit</option><option value="froga">🐸 Froga</option><option value="intruder">👾 Intruder</option><option value="eggo">🥚 Eggo</option><option value="anthone">🐜 Anthone</option><option value="ghost">👻 Ghost</option><option value="cowboy">🤠 Cowboy</option><option value="unknown">👽 Unknown</option><option value="snake">🐍 King Cobra</option><option value="tiger">🐯 Tiger</option><option value="robo">🤖 Robo</option><option value="zombie">🧟 Zombie</option><option value="orange">🐱 Orange</option><option value="judge">🧑‍⚖️ Judge</option><option value="reindeer">🦌 Reindeer</option><option value="puffer">🐡 Puffer</option><option value="trex">🦖 T-Rex</option><option value="dragon">🐉 Dragon</option><option value="elephant">🐘 Elephant</option><option value="kangaroo">🦘 Kangaroo</option><option value="demon">👹 Demon</option></select><div class="rarity-preview" id="rarity-char1b"></div></div>
+   <div class="hint">Arah awal pasukan</div>
+   <div class="direction" data-player="1">
+    <button data-dir="up-left">↖</button><button data-dir="up">↑</button><button data-dir="up-right">↗</button>
+    <button data-dir="left">←</button><button data-dir="down">↓</button><button data-dir="right">→</button>
+    <span></span><button data-dir="down-left">↙</button><button data-dir="down-right">↘</button>
+   </div>
+   <p class="hint" id="dirLabel1">Arah: ↘ Bawah kanan</p>
+  </div>
+  <div class="fighter">
+   <h2 class="pink">● PLAYER 2</h2>
+   <label for="char2a" class="hint">Karakter 1</label>
+   <select id="char2a"><option value="intruder">👾 Intruder</option><option value="unicorn">🦄 Unicorn</option><option value="rabbit">🐰 Rabbit</option><option value="froga">🐸 Froga</option><option value="eggo">🥚 Eggo</option><option value="anthone">🐜 Anthone</option><option value="ghost">👻 Ghost</option><option value="cowboy">🤠 Cowboy</option><option value="unknown">👽 Unknown</option><option value="snake">🐍 King Cobra</option><option value="tiger">🐯 Tiger</option><option value="robo">🤖 Robo</option><option value="zombie">🧟 Zombie</option><option value="orange">🐱 Orange</option><option value="judge">🧑‍⚖️ Judge</option><option value="reindeer">🦌 Reindeer</option><option value="puffer">🐡 Puffer</option><option value="trex">🦖 T-Rex</option><option value="dragon">🐉 Dragon</option><option value="elephant">🐘 Elephant</option><option value="kangaroo">🦘 Kangaroo</option><option value="demon">👹 Demon</option></select><div class="rarity-preview" id="rarity-char2a"></div>
+   <div class="second-slot" id="slot2b"><label for="char2b" class="hint">Karakter 2</label>
+   <select id="char2b"><option value="froga">🐸 Froga</option><option value="intruder">👾 Intruder</option><option value="unicorn">🦄 Unicorn</option><option value="rabbit">🐰 Rabbit</option><option value="eggo">🥚 Eggo</option><option value="anthone">🐜 Anthone</option><option value="ghost">👻 Ghost</option><option value="cowboy">🤠 Cowboy</option><option value="unknown">👽 Unknown</option><option value="snake">🐍 King Cobra</option><option value="tiger">🐯 Tiger</option><option value="robo">🤖 Robo</option><option value="zombie">🧟 Zombie</option><option value="orange">🐱 Orange</option><option value="judge">🧑‍⚖️ Judge</option><option value="reindeer">🦌 Reindeer</option><option value="puffer">🐡 Puffer</option><option value="trex">🦖 T-Rex</option><option value="dragon">🐉 Dragon</option><option value="elephant">🐘 Elephant</option><option value="kangaroo">🦘 Kangaroo</option><option value="demon">👹 Demon</option></select><div class="rarity-preview" id="rarity-char2b"></div></div>
+   <div class="hint">Arah awal pasukan</div>
+   <div class="direction" data-player="2">
+    <button data-dir="up-left">↖</button><button data-dir="up">↑</button><button data-dir="up-right">↗</button>
+    <button data-dir="left">←</button><button data-dir="down">↓</button><button data-dir="right">→</button>
+    <span></span><button data-dir="down-left">↙</button><button data-dir="down-right">↘</button>
+   </div>
+   <p class="hint" id="dirLabel2">Arah: ↖ Atas kiri</p>
+  </div>
+ </div>
+ <div style="display:flex;justify-content:center;margin-top:12px"><button class="primary" id="start">MULA GAME</button></div>
+</section>
+<section class="panel hidden" id="gamePanel">
+ <div id="fighterBars" class="fighter-hud" aria-live="polite"></div>
+ <canvas id="arena" width="1000" height="700"></canvas>
+ <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:#55d9e8"></i>Team 1 (2 karakter)</span><span><i class="dot" style="background:#ff7899"></i>Team 2 (2 karakter)</span><span>🥕 Rabbit</span><span>🌈 Unicorn</span><span>🔸 Rooster</span><span>💥 Letupan Eggo III</span><span>🐜 Anthone & klon</span><span>👻 Ghost</span><span>🤠 Cowboy</span><span>👽 Unknown + 🛸 UFO</span><span>🦘 Kangaroo: charge 5.2s · 30 damage · wall stun</span><span>👹 Demon: Neraka 6s selepas 30s · tiada slow · heal & double damage</span><span>🐍 King Cobra + Time Skip</span><span>🐯 Tiger + Roar</span><span>🤖 Robo</span><span>🐱 Orange + Time Stop</span><span>🧑‍⚖️ Judge + Mark</span><span>🐸 Froga: sehingga 375% kelajuan · 120 damage</span></div>
+ <p class="hint" id="status" style="text-align:center">Pertarungan sedang berlangsung...</p>
+ <div class="actions"><button id="surrender" class="danger">SURRENDER</button><button id="restart" class="primary">MAIN SEMULA</button><button id="change">UBAH PILIHAN</button></div>
+</section>
+<section class="panel">
+ <b>Kemampuan karakter</b><p class="hint">Tekan butang karakter untuk melihat kemampuan dan statistiknya.</p>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability2">🐰 Rabbit: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability2"> 150 HP. Menembak lobak dalam garis lurus ke arah kedudukan musuh setiap 3 saat. Setiap lobak memberi 15 damage. Rabbit tidak memberi damage apabila bertembung. Ada 9% peluang mengelak setiap serangan yang mengenainya.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability3">🦄 Unicorn: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability3"> Menembak 🌈 setiap 5 saat, memberi 20 damage. Setiap kesan khas diuji secara berasingan dengan peluang 40%: rewind 5 saat, slow 30% selama 2 saat, stop 3 saat, atau time skip ke kedudukan 4 saat akan datang. Beberapa kesan boleh berlaku serentak.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability4">🐸 Froga: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability4"> 150 HP. Melee. Setiap lantunan dinding menaikkan stack sehingga 10. Kelajuan dan damage meningkat secara progresif: 0 lantunan = 100% / 10 damage; 1 = 105% / 20; 2 = 115% / 30; 3 = 130% / 40; 4 = 150% / 55; 5 = 175% / 70; 6 = 205% / 90; 7 = 240% / 110; 8 = 280% / 120; 9 = 325% / 120; 10 = 375% / 120. Stack reset apabila Froga terkena musuh.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability5">👾 Intruder: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability5"> Memberi 10 damage apabila bertembung. Setiap kali melantun pada dinding, ada 36.66% peluang untuk dash ke arah musuh dengan kelajuan 275% selama 0.7 saat. Apabila HP di bawah 40%, saiznya berganda, damage pertembungan meningkat menjadi 40, dan damage yang diterima dikurangkan 20%.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability6">👻 Ghost: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability6"> 200 HP. Hanya melantun pada dinding dan menembusi semua karakter. Selagi bersentuhan dengan musuh, memberi 8 damage setiap 0.1 saat dan memperlahankan musuh 50%. Saiz Ghost membesar sehingga 2× ketika menyentuh musuh dan mengecil semula apabila terpisah.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability7">🤠 Cowboy: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability7"> 200 HP. Serangan melee memberi 25 damage. Secara automatik menarik musuh terdekat ke arahnya setiap 15 saat; cooldown dipaparkan di atas karakter.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability8">🐯 Tiger: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability8"> 300 HP. Melee 5 damage. Setiap 8.9 saat mengaum: Tiger dan semua rakan sepasukan mendapat +190% kelajuan selama 2 saat. Tiger mendapat +5 damage kekal setiap ngauman, boleh distack sehingga 15 kali (maksimum +75 damage).</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability9">🤖 Robo: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability9"> 400 HP. Menembak 🔺 setiap 0.5 saat dengan 5 damage. Bergerak perlahan pada kelajuan tetap 1.15; berat dan tidak mudah dipercepat atau diperlahankan oleh perlanggaran.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability10">🐱 Orange: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability10"> 200 HP, melee 10 damage. Di luar Time Stop, Orange menembak 🧶 setiap 6 saat dengan 15 damage. Setiap 25 saat, Orange mengaktifkan Time Stop selama 6.2 saat: semua karakter lain dan projektil mereka terhenti. Orange bertukar menjadi 😼, kelajuan meningkat 80%, melee menjadi 25 damage dan menembak 🧶 setiap 0.7 saat dengan 15 damage. Selepas 6.2 saat, Orange kembali menjadi 🐱.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability11">🧑‍⚖️ Judge: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability11"> 210 HP, melee 25 damage. Apabila mana-mana rakan sepasukan asal Judge (bukan klon) dibunuh musuh, pembunuh menerima MARK; serangan melee Judge terhadapnya menjadi 1-hit kill. Jika HP Judge jatuh di bawah 15%, seorang musuh dipilih secara rawak (dalam 2v2 hanya seorang) dan semua kemampuan khasnya dikunci; Basic Attack masih boleh digunakan.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability12">🐍 King Cobra: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability12"> 150 HP. Melee 20 damage dan menembak 🟢 setiap 3 saat dengan 15 damage. Setiap peluru yang terkena musuh mengenakan Poison selama 2 saat, memberi 8 damage setiap 0.7 saat. Setiap 12 saat, berhenti dan melakukan Time Skip dengan animasi pusaran hijau yang dramatik: semua karakter lain bergerak ke posisi ramalan 10 saat akan datang dan menerima anggaran damage daripada peluru yang sedang menuju mereka serta pertembungan melee yang diramal. King Cobra kekal di tempatnya, kemudian teleport ke musuh hidup dengan HP paling rendah.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability13">👽 Unknown: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability13"> 200 HP. Menembak ☄️ setiap 3 saat dengan 10 damage. Selepas 20 saat pertama dalam arena, Unknown memanggil 🛸 UFO (100 HP) sekali. UFO menculik seorang musuh ke angkasa selama 7 saat, kemudian terhempas tepat ke arah musuh yang masih berada dalam arena (jika tiada, lokasi rawak), meletup dan memberi 100 damage dalam kawasan luas (radius 180) sebelum memulangkan musuh yang diculik. Animasi cahaya, beam tenaga dan letupan berlapis.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability21">🦘 Kangaroo: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability21">200 HP, melee 30 damage. Setiap 5.2 saat, Kangaroo charge ke arah musuh terdekat. Ketika charge, kelajuan turun 90% dan badan bergetar. Serangan dijamin kena, menolak musuh ke dinding dan memberi stun selama 1 saat.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability17">🦌 Reindeer: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability17">200 HP, melee 22 damage. Setiap 16 saat, memulihkan 80 HP kepada diri sendiri dan rakan sepasukan yang cedera. Boleh menggunakan heal maksimum 4 kali dalam satu game.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability16">🧟 Zombie: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability16">200 HP, melee 50 damage. Apabila serangan melee Zombie membunuh musuh, musuh itu bertukar menjadi Zombie sekutu dengan 50% atribut asal, manakala kelajuannya dikekalkan.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability14">🐜 Anthone: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability14"> 40 HP, menembak ▪️ setiap 2 saat dengan 15 damage (20% peluang critical hit 35 damage). Apabila HP mencapai 50% atau kurang, ia menghasilkan satu klon dengan 40 HP dan atribut penuh. Setiap Anthone dan klon boleh berpecah sekali pada 50% HP, sehingga maksimum 7 Anthone keseluruhan termasuk yang asal. Setiap klon tambahan meningkatkan kelajuan serangan seluruh keluarga sebanyak 15%. Health bar dipaparkan secara berasingan; bingkai kuning menandakan yang masih boleh cloning.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability16">👹 Demon: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability16">150 HP, melee 25 damage. Sekali setiap perlawanan, selepas 30 saat, Demon memulakan charge selama 2 saat. Pada masa yang sama arena bertukar menjadi neraka selama 6 saat. Sepanjang neraka: semua karakter bergerak seperti biasa, musuh menerima 4 damage setiap 0.8 saat; Demon pulih 2 HP setiap 0.2 saat, menerima 30% kurang damage, dan serangannya menghasilkan double damage.</div></div>
+ <div class="ability-entry"><button type="button" class="ability-toggle" aria-expanded="false" data-ability="ability15">🥚 Eggo: — Lihat kemampuan</button><div class="ability-detail hidden" id="ability15"> 20 HP, melee 5 damage. Apabila mati, berevolusi menjadi 🐣 Eggo II (30 HP, melee 10 damage), kemudian 🐥 Eggo III (50 HP, melee 15 damage dan menembak setiap 6 saat dengan 15 damage). Apabila Eggo III mati, ia berhenti dan meletup (30 damage dalam kawasan letupan), lalu menjadi 🐓 Rooster (150 HP, melee 20 damage dan menembak 🔸 setiap 2.1 saat dengan 30 damage).</div></div>
+ <p class="hint" style="margin-bottom:0">Empat karakter (dua bagi setiap pasukan) bergerak dalam arena bulat. Ahli pasukan yang sama tidak menyerang satu sama lain. Pasukan menang apabila semua karakter lawan tumbang. Dinding tidak memberi damage.</p>
+</section>
+</main>
+<script>
+// ================= GAME CONFIG =================
+// Nilai ini boleh diubah untuk kemas kini keseimbangan.
+const CONFIG = {
+  maxHP: 200,
+  speed: 3.35,              // sedikit lebih laju, tetapi masih terkawal
+  radius: 23,
+  collisionCooldown: 420,   // sela masa damage collision
+  rabbitShotEvery: 3000,
+  carrotDamage: 15,
+  rabbitCriticalChance: 0.381,
+  rabbitCriticalDamage: 70,
+  carrotSpeed: 7.28,         // 40% lebih laju daripada 5.2
+  unicornShotEvery: 5000,
+  unicornShotSpeed: 6.5,
+  unicornDamage: 20,
+  unicornRewindThreshold: 0.10,
+  unicornRewindWindow: 15000,
+  unicornRewindBuffAttackSpeed: 2,
+  unicornRewindBuffDamage: 1.9,
+  unicornRewindSlowDuration: 1400,
+  dragonHP: 200,
+  dragonMeleeDamage: 15,
+  dragonShotEvery: 2200,
+  dragonShotDamage: 10,
+  dragonShotSpeed: 7.0,
+  dragonBurnDuration: 1600,
+  dragonBurnInterval: 400,
+  dragonBurnDamage: 5,
+  dragonRoarEvery: 23000,
+  dragonRoarDamage: 40,
+  dragonRoarPush: 58,
+  dragonRoarSlowDuration: 800,
+  elephantHP: 600,
+  elephantMeleeDamage: 10,
+  elephantPushChance: 0.50,
+  elephantPushSpeed: 9.5,
+  elephantPushSlowDuration: 2000,
+  elephantPushStunDuration: 1800,
+  elephantDamageReductionMax: 0.60,
+  kangarooHP: 200,
+  kangarooMeleeDamage: 30,
+  kangarooChargeEvery: 5200,
+  kangarooChargeDuration: 900,
+  kangarooPushSpeed: 10.5,
+  kangarooStunDuration: 1000,
+  rabbitDodgeChance: 0.09,
+  intruderCollisionDamage: 10,
+  intruderLowHPThreshold: 0.40,
+  intruderDamageReduction: 0.20,
+  intruderLowHPBonus: 30,
+  meleeWallAimChance: 0.30, // Eggo melee: 30%
+  intruderWallLungeChance: 0.3666, // Intruder: 36.66% peluang dash ke arah musuh selepas pantulan dinding
+  intruderLungeMultiplier: 2.75,
+  intruderLungeDuration: 700,
+  shooterWallAimChance: 0.20, // Rabbit/Rooster: 20% peluang mengelak selepas pantulan dinding
+  anthoneWallAimChance: 0.05, // Anthone: 5% peluang mengelak selepas pantulan dinding
+  arenaRadius: 310,
+  eggoIIIShotEvery: 6000,
+  eggoIIIShotDamage: 15,
+  roosterShotEvery: 2100,
+  roosterShotDamage: 30,
+  eggoMeleeDamage: [0,5,10,15,20],
+  roosterShotSpeed: 7.2,
+  anthoneShotEvery: 2000,
+  anthoneShotSpeed: 6.8,
+  anthoneShotDamage: 15,
+  anthoneCriticalChance: 0.20,
+  anthoneCriticalDamage: 35,
+  anthoneCloneAttackSpeed: 0.15,
+  anthoneMaxFamily: 7, // Maksimum 7 Anthone keseluruhan termasuk yang asal
+  missChance: 0.0299, // 2.99% peluang serangan tidak memberi damage
+  eggBlastDamage: 30,
+  eggBlastRadius: 105,
+  eggEvolveDelay: 450,
+  ghostDamagePerTick: 8,
+  ghostDamageInterval: 100,
+  ghostSlowMultiplier: 0.50,
+  ghostGrowRate: 0.55, // pertambahan skala sesaat sehingga 2x
+  ghostShrinkRate: 0.40, // pengecilan skala sesaat apabila tiada sentuhan musuh
+  cowboyMeleeDamage: 25,
+  cowboyHP: 270,
+  zombieHP: 100,
+  zombieMeleeDamage: 50,
+  zombieConvertedHP: 25,
+  zombieConvertedMeleeDamage: 25,
+  reindeerHP: 200,
+  reindeerMeleeDamage: 22,
+  reindeerHealEvery: 16000,
+  pufferHP: 100,
+  pufferMeleeDamage: 15,
+  pufferShotEvery: 2500,
+  pufferShotDamage: 15,
+  pufferBurstHP: 75,
+  pufferBurstSize: 3.5,
+  pufferBurstSpeed: 4,
+  pufferBurstMeleeDamage: 25,
+  judgeHP: 210,
+  judgeMeleeDamage: 25,
+  orangeHP: 200,
+  orangeMeleeDamage: 10,
+  orangeCatMeleeDamage: 25,
+  orangeTimeStopEvery: 25000,
+  orangeTimeStopDuration: 6200,
+  orangeYarnEvery: 6000,
+  orangeTimeStopYarnEvery: 700,
+  orangeYarnDamage: 15,
+  orangeYarnSpeed: 7.4,
+  orangeSpeedMultiplier: 1.80,
+  cowboyPullEvery: 15000,
+  cowboyPullDuration: 700,
+  cowboyPullSpeedMultiplier: 2.6,
+  snakeShotEvery: 3000,
+  snakeShotDamage: 15,
+  snakeTimeSkipEvery: 12000,
+  snakeTimeSkipSeconds: 10,
+  snakeMeleeDamage: 20,
+  tigerHP: 300,
+  frogaHP: 150,
+  demonHP: 150,
+  demonMeleeDamage: 25,
+  demonActivationDelay: 30000,
+  demonChargeDuration: 2000,
+  demonHellDuration: 6000,
+  demonHellDamage: 4,
+  demonHellDamageEvery: 800,
+  demonHealAmount: 2,
+  demonHealEvery: 200,
+  demonDamageReduction: 0.30,
+  tigerMeleeDamage: 5,
+  tigerRoarEvery: 8900,
+  tigerSpeedMultiplier: 2.9,
+  tigerSpeedBonusPerStack: 1.9,
+  tigerMaxSpeedStacks: 15,
+  tigerTeamBuffDuration: 2000,
+  tigerSelfSpeedDuration: 3000,
+  tigerDamageBonus: 5,
+  tigerMaxDamageStacks: 15,
+  unknownShotEvery: 3000,
+  unknownShotDamage: 10,
+  unknownUfoDelay: 20000,
+  ufoHP: 100,
+  ufoSpaceDuration: 7000,
+  ufoBlastDamage: 100,
+  ufoBlastRadius: 180,
+  roboHP: 400,
+  trexHP: 250,
+  trexMeleeDamage: 20,
+  trexRoarEvery: 20000,
+  trexRoarDamage: 100,
+  reindeerHealAmount: 80,
+  reindeerHealUses: 4,
+  roboShotEvery: 500,
+  roboShotDamage: 5,
+  roboSpeed: 1.15,
+  ufoContactDamageCooldown: 700
+};
+// ===============================================
+const canvas=document.getElementById('arena'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const DIRS={
+ 'up-left':[-1,-1,'↖ Atas kiri'],'up':[0,-1,'↑ Atas'],'up-right':[1,-1,'↗ Atas kanan'],
+ 'left':[-1,0,'← Kiri'],'right':[1,0,'→ Kanan'],
+ 'down-left':[-1,1,'↙ Bawah kiri'],'down':[0,1,'↓ Bawah'],'down-right':[1,1,'↘ Bawah kanan']
+};
+let orangeTimeStopOwnerUid=null,orangeTimeStopUntil=0,orangeTimeStopStartedAt=0;
+let onlineBattle=false,onlineHost=false,onlineTeam=0,lastNetSend=0,lastNetSnapshot=0,netSnapshot=null;
+let gameMode='2v2',chosenDir={1:'down-right',2:'up-left'},teamRoarBuff={1:{until:0,damage:0},2:{until:0,damage:0}},fighters=[],carrots=[],shots=[],antShots=[],unicornShots=[],ufos=[],effects=[],anthoneCount={1:0,2:0},nextUid=1,running=false,paused=false,finished=false,last=0,raf=0,gameStartedAt=0,pendingWinnerCheck=false,trexShakeUntil=0,victoryTeam=null,victoryConfetti=[],victoryStartedAt=0;
+document.querySelectorAll('.direction').forEach(group=>{
+ const p=group.dataset.player;
+ group.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{
+  chosenDir[p]=btn.dataset.dir;
+  group.querySelectorAll('button').forEach(b=>b.classList.toggle('chosen',b===btn));
+  const d=DIRS[btn.dataset.dir];$('dirLabel'+p).textContent='Arah: '+d[2];
+ }));
+ const initial=group.querySelector('[data-dir="'+chosenDir[p]+'"]');initial.classList.add('chosen');
+});
+function vector(dir){let d=DIRS[dir],len=Math.hypot(d[0],d[1])||1;return{x:d[0]/len,y:d[1]/len}}
+function characterName(f){if(f.type==='rabbit')return '🐰 RABBIT';if(f.type==='froga')return '🐸 FROGA';if(f.type==='unicorn')return '🦄 UNICORN';if(f.type==='intruder')return '👾 INTRUDER';if(f.type==='anthone')return '🐜 ANTHONE';if(f.type==='ghost')return '👻 GHOST';if(f.type==='cowboy')return '🤠 COWBOY';if(f.type==='unknown')return '👽 UNKNOWN';if(f.type==='snake')return '🐍 KING COBRA';if(f.type==='zombie')return '🧟 ZOMBIE';if(f.type==='reindeer')return '🦌 REINDEER';if(f.type==='trex')return '🦖 T-REX';if(f.type==='puffer')return f.pufferBurst?'🐡 PUFFER BURST':'🐡 PUFFER';if(f.type==='orange')return (f.orangeCat?'😼 ORANGE':'🐱 ORANGE');if(f.type==='judge')return '🧑‍⚖️ JUDGE';if(f.type==='tiger')return '🐯 TIGER';if(f.type==='dragon')return '🐉 DRAGON';if(f.type==='elephant')return '🐘 ELEPHANT';if(f.type==='kangaroo')return '🦘 KANGAROO';if(f.type==='demon')return '👹 DEMON';if(f.type==='robo')return '🤖 ROBO';return ['🥚 EGGO','🐣 EGGO II','🐥 EGGO III','🐓 ROOSTER'][f.stage-1];}
+// Rooster ialah tahap ke-4 dalam evolusi Eggo, bukannya karakter berasingan.
+function stageHP(f){if(f.type==='anthone')return 40;if(f.type==='rabbit')return 150;if(f.type==='snake')return 200;if(f.type==='orange')return CONFIG.orangeHP;if(f.type==='judge')return CONFIG.judgeHP;if(f.type==='zombie')return CONFIG.zombieHP;if(f.type==='reindeer')return CONFIG.reindeerHP;if(f.type==='trex')return CONFIG.trexHP;if(f.type==='dragon')return CONFIG.dragonHP;if(f.type==='elephant')return CONFIG.elephantHP;if(f.type==='kangaroo')return CONFIG.kangarooHP;if(f.type==='demon')return CONFIG.demonHP;if(f.type==='puffer')return CONFIG.pufferHP;if(f.type==='cowboy')return CONFIG.cowboyHP;if(f.type==='tiger')return CONFIG.tigerHP;if(f.type==='froga')return CONFIG.frogaHP;if(f.type==='robo')return CONFIG.roboHP;if(f.type!=='eggo')return CONFIG.maxHP;return [20,30,50,150][f.stage-1]||20;}
+function makeFighter(team,slot){let d=vector(chosenDir[team]),type=$('char'+team+(slot===1?'a':'b')).value;let hp=stageHP({type,stage:1});let f={uid:nextUid++,id:team,team,type,stage:1,slot,isClone:false,splitDone:false,x:team===1?(slot===1?350:390):(slot===1?610:650),y:slot===1?305:395,vx:d.x*CONFIG.speed,vy:d.y*CONFIG.speed,hp,maxHP:hp,r:CONFIG.radius,color:team===1?'#55d9e8':'#ff7899',lastHit:0,lastShot:performance.now()+CONFIG.rabbitShotEvery,lastRoosterShot:performance.now()+CONFIG.roosterShotEvery,lastEggoIIIShot:performance.now()+CONFIG.eggoIIIShotEvery,lastAntShot:performance.now()+CONFIG.anthoneShotEvery,lastUnicornShot:performance.now()+CONFIG.unicornShotEvery,lastUnknownShot:performance.now()+CONFIG.unknownShotEvery,lastSnakeShot:performance.now()+CONFIG.snakeShotEvery,lastSnakeSkip:performance.now()+CONFIG.snakeTimeSkipEvery,lastOrangeTimeStop:performance.now()+CONFIG.orangeTimeStopEvery,lastOrangeYarn:performance.now()+CONFIG.orangeYarnEvery,orangeCat:false,lastTigerRoar:performance.now()+CONFIG.tigerRoarEvery,lastRoboShot:performance.now()+CONFIG.roboShotEvery,lastPufferShot:performance.now()+CONFIG.pufferShotEvery,lastReindeerHeal:performance.now()+CONFIG.reindeerHealEvery,reindeerHealsUsed:0,lastTRexRoar:performance.now()+CONFIG.trexRoarEvery,lastDragonShot:performance.now()+CONFIG.dragonShotEvery,lastDragonRoar:performance.now()+CONFIG.dragonRoarEvery,lastKangarooCharge:performance.now()+CONFIG.kangarooChargeEvery,demonAbilityUsed:false,demonHellUntil:0,demonChargingUntil:0,demonNextHeal:0,demonHellTargets:{},dragonBurns:[],snakePoisons:[],dragonSlowUntil:0,unicornHistory:[],timelineHistory:[],unicornRewindUsed:false,unicornBuffed:false,rewindVisualUntil:0,tigerDamageStacks:0,tigerSpeedStacks:0,tigerSpeedUntil:0,unknownSummoned:false,history:[],slowUntil:0,stunUntil:0,alive:true,evolving:false,evolveUntil:0,boostUntil:0,frogaStacks:0,ghostContacts:new Map(),ghostGrow:0,ghostTouching:false,ghostSlowUntil:0,lastCowboyPull:performance.now()-CONFIG.cowboyPullEvery,pulledUntil:0,pullFromUid:null};if(type==='anthone')anthoneCount[team]++;updateFighterSize(f);return f;}
+function updateFighterSize(f){if(f.type==='elephant'){f.r=CONFIG.radius*2;return;}if(f.type==='puffer'&&f.pufferBurst){f.r=CONFIG.radius*CONFIG.pufferBurstSize;return;}if(f.type==='ghost'){f.r=CONFIG.radius*(1+Math.max(0,Math.min(1,f.ghostGrow||0)));return;}f.r=(f.type==='intruder'&&!abilitySuppressed(f)&&f.hp/f.maxHP<CONFIG.intruderLowHPThreshold)?CONFIG.radius*2:CONFIG.radius;}
+function updateGhostGrowth(f,dt){if(f.type!=='ghost')return;const step=(f.ghostTouching?CONFIG.ghostGrowRate:-CONFIG.ghostShrinkRate)*dt;f.ghostGrow=Math.max(0,Math.min(1,(f.ghostGrow||0)+step));updateFighterSize(f);}
+function updateName(f){/* Paparan nama kini berada pada health bar setiap karakter; tiada lagi elemen name1/name2. */updateHUD();}
+function createAnthoneClone(parent){if(anthoneCount[parent.team]>=CONFIG.anthoneMaxFamily)return;anthoneCount[parent.team]++;const angle=Math.random()*Math.PI*2,offset=parent.r*2+8;const d=vector(chosenDir[parent.team]);const clone={uid:nextUid++,id:parent.team,team:parent.team,type:'anthone',stage:1,isClone:true,splitDone:false,x:parent.x+Math.cos(angle)*offset,y:parent.y+Math.sin(angle)*offset,vx:-d.x*CONFIG.speed,vy:-d.y*CONFIG.speed,hp:40,maxHP:40,r:CONFIG.radius,color:parent.color,lastHit:0,lastShot:0,lastRoosterShot:0,lastAntShot:performance.now()+CONFIG.anthoneShotEvery,lastUnicornShot:performance.now()+CONFIG.unicornShotEvery,lastUnknownShot:performance.now()+CONFIG.unknownShotEvery,lastSnakeShot:performance.now()+CONFIG.snakeShotEvery,lastSnakeSkip:performance.now()+CONFIG.snakeTimeSkipEvery,lastOrangeTimeStop:performance.now()+CONFIG.orangeTimeStopEvery,lastOrangeYarn:performance.now()+CONFIG.orangeYarnEvery,orangeCat:false,lastTigerRoar:performance.now()+CONFIG.tigerRoarEvery,lastRoboShot:performance.now()+CONFIG.roboShotEvery,lastPufferShot:performance.now()+CONFIG.pufferShotEvery,lastReindeerHeal:performance.now()+CONFIG.reindeerHealEvery,reindeerHealsUsed:0,lastTRexRoar:performance.now()+CONFIG.trexRoarEvery,lastDragonShot:performance.now()+CONFIG.dragonShotEvery,lastDragonRoar:performance.now()+CONFIG.dragonRoarEvery,lastKangarooCharge:performance.now()+CONFIG.kangarooChargeEvery,demonAbilityUsed:false,demonHellUntil:0,demonChargingUntil:0,demonNextHeal:0,demonHellTargets:{},dragonBurns:[],snakePoisons:[],dragonSlowUntil:0,unicornHistory:[],timelineHistory:[],unicornRewindUsed:false,unicornBuffed:false,rewindVisualUntil:0,tigerDamageStacks:0,tigerSpeedStacks:0,tigerSpeedUntil:0,unknownSummoned:false,history:[],slowUntil:0,stunUntil:0,alive:true,evolving:false,evolveUntil:0,boostUntil:0};const cx=canvas.width/2,cy=canvas.height/2,lim=CONFIG.arenaRadius-clone.r,dx=clone.x-cx,dy=clone.y-cy,dist=Math.hypot(dx,dy);if(dist>lim){clone.x=cx+dx/(dist||1)*lim;clone.y=cy+dy/(dist||1)*lim;}fighters.push(clone);updateHUD();}
+function judgeAbilitySeal(now){
+ // Apabila Judge jatuh di bawah 15% HP, kunci kemampuan seorang musuh secara kekal untuk baki perlawanan.
+ fighters.filter(j=>j.type==='judge'&&j.alive&&!j.evolving&&!j.judgeSealTriggered&&j.hp/j.maxHP<0.15).forEach(j=>{
+  const enemies=fighters.filter(f=>f.team!==j.team&&f.alive&&!f.evolving&&!f.inSpace&&!f.isClone);
+  const pool=enemies.length?enemies:fighters.filter(f=>f.team!==j.team&&f.alive&&!f.evolving&&!f.inSpace);
+  if(!pool.length)return;
+  const target=pool[Math.floor(Math.random()*pool.length)];
+  target.abilitySuppressedByJudge=true;j.judgeSealTriggered=true;j.judgeSealTargetUid=target.uid;
+  $('status').textContent='⚖️ HUKUMAN JUDGE! '+characterName(target)+' P'+target.team+' kehilangan semua kemampuan khas! Basic Attack masih boleh digunakan.';
+  updateHUD();
+ });
+}
+function abilitySuppressed(f){return !!(f&&f.abilitySuppressedByJudge);}
+function teamAlive(team){return fighters.some(f=>f.team===team&&f.alive);}
+function assignJudgementMark(victim,killer){
+ // Mark diberikan apabila Judge kehilangan mana-mana rakan sepasukan asal (bukan klon).
+ if(!victim||victim.isClone)return;
+ const judgeAlive=fighters.some(f=>f.team===victim.team&&f.type==='judge'&&f.alive&&!f.evolving);
+ if(!judgeAlive||!killer||killer.team===victim.team)return;
+ killer.judgementMark=true;
+ $('status').textContent='⚖️ MARK DIBERIKAN! '+characterName(killer)+' P'+killer.team+' membunuh rakan sepasukan Judge! Judge boleh menyingkirkannya dengan satu serangan!';
+}
+function checkWinner(){const a=teamAlive(1),b=teamAlive(2);if(!a||!b)pendingWinnerCheck=true;}
+function resolveWinnerCheck(){if(!pendingWinnerCheck||finished)return;pendingWinnerCheck=false;const a=teamAlive(1),b=teamAlive(2);if(!a||!b)finish(a?1:b?2:0);}
+function startElephantPush(elephant,target,now){
+ if(!elephant||!target||!target.alive||target.team===elephant.team||target.elephantPush)return;
+ let dx=target.x-elephant.x,dy=target.y-elephant.y,len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+ target.elephantPush={dx,dy,startedAt:now,until:now+900,outcome:Math.random()<0.5?'slow':'stun'};
+ effects.push({x:target.x,y:target.y,life:520,max:520,type:'elephant-push',dx,dy});
+ $('status').textContent='🐘 ELEPHANT! Tolakan kuat sedang menolak '+characterName(target)+' ke dinding!';
+}
+function updateElephantPushes(now,dt){
+ fighters.forEach(t=>{const p=t.elephantPush;if(!p)return;if(!t.alive||t.inSpace){t.elephantPush=null;return;}
+  const cx=canvas.width/2,cy=canvas.height/2,limit=CONFIG.arenaRadius-t.r-2;
+  const nx=t.x+p.dx*CONFIG.elephantPushSpeed*dt-cx,ny=t.y+p.dy*CONFIG.elephantPushSpeed*dt-cy;
+  const dist=Math.hypot(nx,ny);
+  if(dist>=limit){const scale=limit/(dist||1);t.x=cx+nx*scale;t.y=cy+ny*scale;t.elephantPush=null;
+   if(p.outcome==='slow')t.elephantSlowUntil=now+CONFIG.elephantPushSlowDuration;else t.stunUntil=Math.max(t.stunUntil||0,now+CONFIG.elephantPushStunDuration);
+   effects.push({x:t.x,y:t.y,life:360,max:360,type:'elephant-wall'});
+   $('status').textContent=p.outcome==='slow'?'🐘 DITOLAK KE DINDING! Slow 80% selama 2 saat!':'🐘 DITOLAK KE DINDING! STUN selama 1.8 saat!';
+  }else{t.x=cx+nx;t.y=cy+ny;}
+ });
+}
+function damageFighter(target,damage,attackerId,source,attackerFighter=null){if(!target||!target.alive||target.evolving||finished)return;
+ const killer=attackerFighter||fighters.filter(f=>f.team===attackerId&&f.uid!==target.uid).sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y))[0]||null;
+ const judgeExecution=source==='melee'&&attackerFighter&&attackerFighter.type==='judge'&&target.judgementMark===true&&attackerFighter.team!==target.team;
+ const now=performance.now();const roar=teamRoarBuff[attackerId];if(roar&&now<roar.until)damage+=roar.damage;
+ if(attackerFighter&&attackerFighter.type==='demon'&&source!=='demon-hell'&&!abilitySuppressed(attackerFighter)&&now<(attackerFighter.demonHellUntil||0))damage*=2;
+ // Judge mengabaikan peluang dodge/MISS apabila menyerang sasaran bertanda.
+ if(!judgeExecution&&!abilitySuppressed(target)&&!source.startsWith('ghost-')&&source!=='demon-hell'&&target.type==='rabbit'&&Math.random()<CONFIG.rabbitDodgeChance){$('status').textContent='🐰 DODGE! Rabbit P'+target.team+' berjaya mengelak serangan P'+attackerId+'! Tiada damage.';return 'rabbit-dodge';}
+ if(!judgeExecution&&!source.startsWith('ghost-')&&!source.startsWith('kangaroo-charge')&&source!=='demon-hell'&&Math.random()<CONFIG.missChance){$('status').textContent='MISS! Serangan P'+attackerId+' tidak memberi damage.';return 'miss';}
+ if(judgeExecution){damage=target.hp+1;$('status').textContent='🧑‍⚖️ JUDGE MELAKSANAKAN HUKUMAN! Sasaran bertanda disingkirkan dengan 1 HIT KILL!';}
+ // Anthone yang masih mempunyai peluang clone tidak boleh dihapuskan oleh satu serangan: damage maksimum 50% HP asal.
+ const canAnthoneClone=target.type==='anthone'&&!abilitySuppressed(target)&&!target.splitDone&&anthoneCount[target.team]<CONFIG.anthoneMaxFamily;
+ const intruderGuard=target.type==='intruder'&&!abilitySuppressed(target)&&target.hp/target.maxHP<CONFIG.intruderLowHPThreshold&&!judgeExecution;
+ const elephantReduction=target.type==='elephant'?Math.max(0,Math.min(CONFIG.elephantDamageReductionMax,(1-target.hp/target.maxHP)*CONFIG.elephantDamageReductionMax)):0;
+ let reducedDamage=damage;if(intruderGuard)reducedDamage*=1-CONFIG.intruderDamageReduction;if(elephantReduction>0)reducedDamage*=1-elephantReduction;if(target.type==='demon'&&!judgeExecution)reducedDamage*=1-CONFIG.demonDamageReduction;
+ const appliedDamage=judgeExecution?damage:(canAnthoneClone?Math.min(reducedDamage,target.maxHP*0.5):reducedDamage);
+ target.hp=Math.max(0,target.hp-appliedDamage);updateFighterSize(target);
+ if(target.hp>0&&source==='melee'&&attackerFighter&&attackerFighter.type==='elephant'&&Math.random()<CONFIG.elephantPushChance){startElephantPush(attackerFighter,target,performance.now());}
+ if(target.type==='unicorn'&&!target.unicornRewindUsed&&!abilitySuppressed(target)&&target.hp/target.maxHP<=CONFIG.unicornRewindThreshold){activateUnicornRewind(target,performance.now());return true;}
+ if(canAnthoneClone&&target.hp<=target.maxHP*0.5){target.splitDone=true;createAnthoneClone(target);$('status').textContent='🐜 Anthone P'+target.team+' berpecah! ('+anthoneCount[target.team]+'/'+CONFIG.anthoneMaxFamily+')';}
+ updateHUD();if(target.hp>0)return true;if(target.type==='eggo'&&target.stage<4&&!abilitySuppressed(target)){advanceEgg(target);return true;}target.alive=false;
+ assignJudgementMark(target,killer);
+ // Puffer tidak terus tersingkir: ia memasuki bentuk Burst dengan 75 HP dan kekal sehingga HP habis.
+ if(target.type==='puffer'&&!target.pufferBurst){target.alive=true;target.pufferBurst=true;target.hp=CONFIG.pufferBurstHP;target.maxHP=CONFIG.pufferBurstHP;target.vx*=CONFIG.pufferBurstSpeed;target.vy*=CONFIG.pufferBurstSpeed;target.lastHit=0;updateFighterSize(target);updateHUD();$('status').textContent='🐡 PUFFER MELETUP! 75 HP, saiz 3.5×, kelajuan 4×, melee 25 sehingga HP habis!';return true;}
+ // Zombie yang membunuh melalui serangan melee menukar mangsa menjadi Zombie sekutunya.
+ if(source==='melee'&&attackerFighter&&attackerFighter.type==='zombie'&&attackerFighter.alive&&!abilitySuppressed(attackerFighter)){
+  const preservedSpeed=Math.hypot(target.vx||0,target.vy||0)||CONFIG.speed;
+  const angle=Math.atan2(target.vy||0,target.vx||preservedSpeed);
+  target.type='zombie';target.team=attackerFighter.team;target.id=attackerFighter.team;target.stage=1;target.isClone=false;target.splitDone=false;target.maxHP=CONFIG.zombieConvertedHP;target.hp=target.maxHP;target.meleeDamage=CONFIG.zombieConvertedMeleeDamage;target.alive=true;target.evolving=false;target.inSpace=false;target.spaceReturnUid=null;target.vx=Math.cos(angle)*preservedSpeed;target.vy=Math.sin(angle)*preservedSpeed;target.lastHit=0;target.color=attackerFighter.color;target.lastShot=performance.now();target.lastCowboyPull=performance.now();target.r=CONFIG.radius;updateHUD();$('status').textContent='🧟 Zombie P'+attackerFighter.team+' menukar musuh menjadi Zombie sekutu! (25 HP, 25 damage, kelajuan kekal)';checkWinner();return true;
+ }
+ if(target.type==='eggo'&&target.stage===4){effects.push({x:target.x,y:target.y,life:900,max:900,type:'rooster-explosion'});fighters.filter(o=>o.alive&&!o.evolving&&!o.inSpace&&o.team!==target.team&&Math.hypot(o.x-target.x,o.y-target.y)<=CONFIG.eggBlastRadius+o.r).forEach(o=>damageFighter(o,100,target.team,'rooster-existence-blast',target));if(!finished)$('status').textContent='🐓 Rooster musnah! Letupan kewujudan memberikan 100 damage!';}
+ updateHUD();checkWinner();return true;}
+function advanceEgg(f){const oldStage=f.stage;f.alive=true;if(oldStage===3){f.evolving=true;f.hp=0;f.vx=0;f.vy=0;f.evolveUntil=performance.now()+CONFIG.eggEvolveDelay;effects.push({x:f.x,y:f.y,life:850,max:850,type:'egg-explosion'});const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];if(enemy&&Math.hypot(enemy.x-f.x,enemy.y-f.y)<=CONFIG.eggBlastRadius+enemy.r){damageFighter(enemy,CONFIG.eggBlastDamage,f.id,'blast',f);if(!finished)$('status').textContent='💥 Eggo III meletup! 30 damage kawasan.';}}
+ else{f.stage++;f.maxHP=stageHP(f);f.hp=f.maxHP;f.lastHit=performance.now();updateName(f);if(!finished)$('status').textContent='Team '+f.team+' berevolusi menjadi '+characterName(f)+'!';}updateHUD();}
+function updateEvolution(now){fighters.forEach(f=>{if(f.evolving&&now>=f.evolveUntil&&!finished){f.evolving=false;f.stage=4;f.maxHP=stageHP(f);f.hp=f.maxHP;const d=vector(chosenDir[f.id]);f.vx=d.x*CONFIG.speed;f.vy=d.y*CONFIG.speed;f.lastRoosterShot=now+CONFIG.roosterShotEvery;updateName(f);$('status').textContent='🐓 Team '+f.team+' mempunyai Rooster!';updateHUD();}})}
+const CHARACTER_RARITY={
+ rabbit:'Basic',robo:'Basic',elephant:'Basic',intruder:'Basic',
+ eggo:'Elite',tiger:'Elite',cowboy:'Elite',unknown:'Elite',
+ anthone:'Hyper',ghost:'Hyper',reindeer:'Hyper',puffer:'Hyper',froga:'Hyper',kangaroo:'Hyper',zombie:'Hyper',
+ unicorn:'Unique',snake:'Unique',orange:'Unique',judge:'Unique',trex:'Unique',dragon:'Unique',demon:'Unique'
+};
+const RARITY_COLORS={Basic:'#2589E8',Elite:'#F28C28',Hyper:'#963CE8',Unique:'#9299A3'};
+function rarityName(type){return CHARACTER_RARITY[type]||'Basic';}
+function rarityChip(type){const name=rarityName(type),color=RARITY_COLORS[name];return '<span class="rarity-chip" style="color:'+color+';background:'+color+'20">'+name.toUpperCase()+'</span>';}
+function updateRarityPreviews(){['char1a','char1b','char2a','char2b'].forEach(id=>{const select=$(id),preview=$('rarity-'+id);if(!select||!preview)return;const name=rarityName(select.value),color=RARITY_COLORS[name];preview.innerHTML='<span class="rarity-dot" style="background:'+color+';color:'+color+'"></span>'+name.toUpperCase();preview.style.borderColor=color;preview.style.color=color;});}
+['char1a','char1b','char2a','char2b'].forEach(id=>$(id).addEventListener('change',updateRarityPreviews));
+updateRarityPreviews();
+function setMode(mode){gameMode=mode;const isDoubles=mode==='2v2';['1b','2b'].forEach(id=>{$('slot'+id).classList.toggle('hidden',!isDoubles)});$('setupTitle').textContent=isDoubles?'Bina pasukan 2v2':'Bina perlawanan 1v1';$('setupHint').textContent=isDoubles?'Pilih dua karakter untuk setiap pasukan. Kedua-dua ahli bermula dengan arah pasukan yang sama.':'Pilih seorang karakter bagi setiap pasukan. Tetapkan arah awal masing-masing.';document.querySelectorAll('.legend span').forEach((el,i)=>{if(i===0)el.textContent=isDoubles?'Team 1 (2 karakter)':'Team 1 (1 karakter)';if(i===1)el.textContent=isDoubles?'Team 2 (2 karakter)':'Team 2 (1 karakter)';});}
+$('modeSelect').addEventListener('change',e=>setMode(e.target.value));
+setMode($('modeSelect').value);
+document.querySelectorAll('.ability-toggle').forEach(btn=>btn.addEventListener('click',()=>{const panel=$(btn.dataset.ability);const opening=panel.classList.contains('hidden');panel.classList.toggle('hidden',!opening);btn.setAttribute('aria-expanded',String(opening));btn.textContent=btn.textContent.replace(opening?'Lihat kemampuan':'Tutup kemampuan',opening?'Tutup kemampuan':'Lihat kemampuan');}));
+function startGame(){cancelAnimationFrame(raf);victoryTeam=null;victoryConfetti=[];victoryStartedAt=0;pendingWinnerCheck=false;trexShakeUntil=0;orangeTimeStopOwnerUid=null;orangeTimeStopUntil=0;orangeTimeStopStartedAt=0;anthoneCount={1:0,2:0};teamRoarBuff={1:{until:0,damage:0},2:{until:0,damage:0}};nextUid=1;fighters=gameMode==='1v1'?[makeFighter(1,1),makeFighter(2,1)]:[makeFighter(1,1),makeFighter(1,2),makeFighter(2,1),makeFighter(2,2)];carrots=[];shots=[];antShots=[];unicornShots=[];ufos=[];effects=[];running=true;paused=false;finished=false;last=0;gameStartedAt=performance.now();$('setupPanel').classList.add('hidden');$('gamePanel').classList.remove('hidden');$('status').textContent=gameMode==='1v1'?'Mode 1v1: seorang lawan seorang!':'Mode 2v2: dua lawan dua!';fighters.forEach(updateName);updateHUD();draw();raf=requestAnimationFrame(loop)}
+function updateHUD(){
+ const cards=fighters.slice().sort((a,b)=>a.team-b.team||a.slot-b.slot||a.uid-b.uid);
+ $('fighterBars').innerHTML=cards.map((f,index)=>{
+  const canClone=f.type==='anthone'&&f.alive&&!f.splitDone&&anthoneCount[f.team]<CONFIG.anthoneMaxFamily;
+  const label='TEAM '+f.team+' · '+characterName(f)+(f.isClone?' · KLON':'');
+  const hp=Math.max(0,Math.ceil(f.hp));
+  const color=f.team===1?'#55d9e8':'#ff7899';
+  const note=(canClone?'<div class="fighter-note">✦ BOLEH CLONING</div>':'')+(f.judgementMark?'<div class="fighter-note">⚖️ MARK — SASARAN JUDGE</div>':'');
+  let state;if(f.inSpace)state='DI ANGKASA';else if(f.pufferBurst)state=hp+' / '+f.maxHP+' HP · BURST';else if(f.alive&&!f.evolving)state=hp+' / '+f.maxHP+' HP';else state=f.evolving?'EVOLUSI':'TUMBANG';
+  return '<div class="fighter-card team'+f.team+(canClone?' ready':'')+'"><div class="fighter-head"><span>'+label+'</span>'+rarityChip(f.type)+'<span>'+state+'</span></div>'+note+'<div class="fighter-bar"><span style="width:'+Math.max(0,Math.min(100,100*f.hp/(f.maxHP||1)))+'%;background:'+color+'"></span></div></div>';
+ }).join('');
+}
+
+function reflectWall(f){
+ const cx=canvas.width/2,cy=canvas.height/2,arenaR=CONFIG.arenaRadius-f.r;
+ let dx=f.x-cx,dy=f.y-cy,dist=Math.hypot(dx,dy);
+ if(dist>arenaR){
+  const nx=dx/(dist||1),ny=dy/(dist||1);
+  f.x=cx+nx*arenaR;f.y=cy+ny*arenaR;
+  const dot=f.vx*nx+f.vy*ny;
+  if(dot>0){
+   // Froga mengumpul kelajuan pada setiap lantunan dinding; lantunan selepas cap reset.
+   if(f.type==='froga'&&!abilitySuppressed(f)){f.frogaStacks=Math.min(10,(f.frogaStacks||0)+1);}
+   // Pantulan biasa dahulu.
+   f.vx-=2*dot*nx;f.vy-=2*dot*ny;
+
+   // Peluang kecil untuk melantun tepat ke arah lawan.
+   const enemy=fighters.filter(other=>other.team!==f.team&&other.alive&&!other.evolving).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+   const isIntruder=f.type==='intruder'&&!abilitySuppressed(f);
+   const isMelee=(f.type==='eggo')||f.type==='cowboy';
+   const chance=(f.type==='ghost'||f.type==='cowboy')?0:(f.type==='anthone'?CONFIG.anthoneWallAimChance:(isIntruder?CONFIG.intruderWallLungeChance:(isMelee?CONFIG.meleeWallAimChance:CONFIG.shooterWallAimChance)));
+   if(enemy&&Math.random()<chance){
+    const tx=enemy.x-f.x,ty=enemy.y-f.y;
+    const speed=(Math.hypot(f.vx,f.vy)||CONFIG.speed)*(isIntruder?CONFIG.intruderLungeMultiplier:1);
+    // Shooter biasa mengelak; Intruder dan melee meluru ke arah musuh.
+    const flee=!isIntruder&&!isMelee&&f.type!=='anthone';
+    const ax=flee?-tx:tx,ay=flee?-ty:ty,alen=Math.hypot(ax,ay)||1;
+    f.vx=ax/alen*speed;f.vy=ay/alen*speed;
+    if(isIntruder)f.boostUntil=performance.now()+CONFIG.intruderLungeDuration;
+   }
+  }
+ }
+}
+function fireCarrot(f,now){
+ // Cari lawan berdasarkan ID, bukan indeks array (ID bermula dari 1).
+ if(f.type!=='rabbit'||!f.alive||finished||abilitySuppressed(f)||now<f.lastShot)return;
+ const enemy=fighters.filter(other=>other.team!==f.team&&other.alive&&!other.evolving).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;
+ const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ carrots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.carrotSpeed,vy:dy/len*CONFIG.carrotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:3200});
+ f.lastShot=now+CONFIG.rabbitShotEvery; // Tembakan seterusnya hanya selepas 3 saat.
+}
+function fireStageShot(f,now,stage){const isRooster=stage===4,isEggoIII=stage===3;if(f.type!=='eggo'||f.stage!==stage||!f.alive||f.evolving||finished||(abilitySuppressed(f)&&stage!==4))return;const timer=isRooster?'lastRoosterShot':'lastEggoIIIShot',interval=isRooster?CONFIG.roosterShotEvery:CONFIG.eggoIIIShotEvery;if(now<f[timer])return;const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];if(!enemy)return;const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.roosterShotSpeed,vy:dy/len*CONFIG.roosterShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:isRooster?CONFIG.roosterShotDamage:CONFIG.eggoIIIShotDamage,kind:isRooster?'rooster':'eggoIII'});f[timer]=now+interval;}
+function fireEggoIII(f,now){fireStageShot(f,now,3)}
+function fireRooster(f,now){fireStageShot(f,now,4)}
+
+function fireSnake(f,now){
+ if(f.type!=='snake'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f))return;
+ if(now>=f.lastSnakeShot){
+  const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>a.hp-b.hp)[0];
+  if(enemy){const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.roosterShotSpeed,vy:dy/len*CONFIG.roosterShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.snakeShotDamage,kind:'snake'});f.lastSnakeShot=now+CONFIG.snakeShotEvery;}
+ }
+ if(now>=f.lastSnakeSkip){
+  // Simpan posisi ramalan 10 saat ke hadapan untuk semua fighter kecuali King Cobra.
+  const others=fighters.filter(o=>o.uid!==f.uid&&o.alive&&!o.evolving&&!o.inSpace);
+  const future=new Map(others.map(o=>[o.uid,predictFuturePosition(o,CONFIG.snakeTimeSkipSeconds)]));
+  const predictedDamage=new Map(others.map(o=>[o.uid,0]));
+  // Serangan projektil yang sedang menuju sasaran dikira sebagai damage berpotensi.
+  for(const q of carrots){if(predictedDamage.has(q.targetUid))predictedDamage.set(q.targetUid,predictedDamage.get(q.targetUid)+CONFIG.carrotDamage);}
+  for(const q of shots){if(predictedDamage.has(q.targetUid))predictedDamage.set(q.targetUid,predictedDamage.get(q.targetUid)+(q.damage||CONFIG.roosterShotDamage));}
+  for(const q of antShots){if(predictedDamage.has(q.targetUid))predictedDamage.set(q.targetUid,predictedDamage.get(q.targetUid)+CONFIG.anthoneShotDamage);}
+  for(const q of unicornShots){if(predictedDamage.has(q.targetUid))predictedDamage.set(q.targetUid,predictedDamage.get(q.targetUid)+CONFIG.unicornDamage);}
+  // Anggarkan satu pertembungan melee jika ramalan kedudukan berakhir dalam jarak sentuhan.
+  for(const target of others){for(const attacker of fighters){if(!attacker.alive||attacker.evolving||attacker.inSpace||attacker.team===target.team||attacker.uid===f.uid)continue;const ap=future.get(attacker.uid)||{x:attacker.x,y:attacker.y},tp=future.get(target.uid);if(!tp)continue;if(Math.hypot(ap.x-tp.x,ap.y-tp.y)<attacker.r+target.r+8){const d=meleeCollisionDamage(attacker,attacker.frogaStacks||0);if(d>0)predictedDamage.set(target.uid,predictedDamage.get(target.uid)+d);}}
+  }
+  others.forEach(o=>{const pos=future.get(o.uid);o.x=pos.x;o.y=pos.y;o.history=[];});
+  // Terapkan damage ramalan selepas kedudukan masa depan ditetapkan.
+  others.forEach(o=>{const dmg=predictedDamage.get(o.uid)||0;if(dmg>0&&o.alive)damageFighter(o,dmg,f.team,'snake-time-skip');});
+  const prey=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>a.hp-b.hp)[0];
+  if(prey){const angle=Math.atan2(f.y-prey.y,f.x-prey.x),dist=f.r+prey.r+5;f.x=prey.x-Math.cos(angle)*dist;f.y=prey.y-Math.sin(angle)*dist;}
+  f.snakeResumeVx=f.vx;f.snakeResumeVy=f.vy;f.snakeResumeAt=now+450;f.vx=0;f.vy=0;f.stunUntil=now+450;
+  f.lastSnakeSkip=now+CONFIG.snakeTimeSkipEvery;
+  effects.push({x:f.x,y:f.y,life:1450,max:1450,type:'time-skip'});effects.push({x:f.x,y:f.y,life:850,max:850,type:'time-skip-flash'});
+  if(!finished)$('status').textContent='🐍 KING COBRA TIME SKIP! Arena melompat 10 saat ke hadapan; damage ramalan dikenakan. King Cobra muncul di sisi musuh dengan HP terendah!';
+  updateHUD();
+ }
+}
+
+function fireDragon(f,now){
+ if(f.type!=='dragon'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<(f.lastDragonShot||0))return;
+ const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.dragonShotSpeed,vy:dy/len*CONFIG.dragonShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.dragonShotDamage,kind:'dragon-fire'});
+ f.lastDragonShot=now+CONFIG.dragonShotEvery;
+}
+function dragonRoar(f,now){
+ if(f.type!=='dragon'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<(f.lastDragonRoar||0))return;
+ f.lastDragonRoar=now+CONFIG.dragonRoarEvery;
+ // Ngauman Dragon menggunakan gegaran sekuat T-Rex, tetapi gelombangnya merah.
+ trexShakeUntil=now+1450;
+ effects.push({x:f.x,y:f.y,life:1450,max:1450,type:'dragon-roar'});
+ effects.push({x:f.x,y:f.y,life:1100,max:1100,type:'dragon-roar'});
+ fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).forEach(o=>{
+  const dx=o.x-f.x,dy=o.y-f.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+  // Tolakan Dragon bergerak secara berperingkat setiap frame, bukan teleport ke dinding.
+  o.dragonPush={dx:ux,dy:uy,startedAt:now};
+  o.vx=ux*CONFIG.speed*2.5;o.vy=uy*CONFIG.speed*2.5;
+  o.dragonSlowUntil=now+CONFIG.dragonRoarSlowDuration;
+  effects.push({x:o.x,y:o.y,life:420,max:420,type:'dragon-push',dx:ux,dy:uy});
+  damageFighter(o,CONFIG.dragonRoarDamage,f.team,'dragon-roar',f);
+ });
+ $('status').textContent='🐉 DRAGON MENGAUM! Gelombang merah: 40 damage, menolak musuh dan memperlahankan mereka 80% selama 0.8 saat!';
+}
+function updateDragonPushes(now,dt){
+ fighters.forEach(t=>{const p=t.dragonPush;if(!p)return;if(!t.alive||t.inSpace){t.dragonPush=null;return;}
+  const cx=canvas.width/2,cy=canvas.height/2,limit=CONFIG.arenaRadius-t.r-2;
+  const nx=t.x+p.dx*CONFIG.speed*6.5*dt-cx,ny=t.y+p.dy*CONFIG.speed*6.5*dt-cy,dist=Math.hypot(nx,ny);
+  if(dist>=limit){const scale=limit/(dist||1);t.x=cx+nx*scale;t.y=cy+ny*scale;t.dragonPush=null;
+   effects.push({x:t.x,y:t.y,life:520,max:520,type:'dragon-wall'});
+  }else{t.x=cx+nx;t.y=cy+ny;effects.push({x:t.x,y:t.y,life:90,max:90,type:'dragon-push',dx:p.dx,dy:p.dy});}
+ });
+}
+function updateDragonBurns(now){
+ fighters.forEach(f=>{if(!f.dragonBurns)f.dragonBurns=[];for(let i=f.dragonBurns.length-1;i>=0;i--){const b=f.dragonBurns[i];while(b.remaining>0&&now>=b.nextTick){if(f.alive&&!f.evolving)damageFighter(f,CONFIG.dragonBurnDamage,b.team,'dragon-burn');b.remaining--;b.nextTick+=CONFIG.dragonBurnInterval;}if(b.remaining<=0||now>=b.endAt)f.dragonBurns.splice(i,1);}});
+}
+function updateSnakePoisons(now){
+ fighters.forEach(f=>{if(!f.snakePoisons)f.snakePoisons=[];for(let i=f.snakePoisons.length-1;i>=0;i--){const b=f.snakePoisons[i];while(b.remaining>0&&now>=b.nextTick){if(f.alive&&!f.evolving)damageFighter(f,8,b.team,'snake-poison');b.remaining--;b.nextTick+=700;}if(b.remaining<=0||now>=b.endAt)f.snakePoisons.splice(i,1);}});
+}
+function timelineSnapshot(f,now){
+ const keys=['x','y','vx','vy','hp','maxHP','alive','evolving','evolveUntil','inSpace','stage','type','r','lastHit','lastShot','lastRoosterShot','lastEggoIIIShot','lastAntShot','lastUnicornShot','lastUnknownShot','lastSnakeShot','lastSnakeSkip','lastOrangeTimeStop','lastOrangeYarn','lastTigerRoar','lastRoboShot','lastPufferShot','lastReindeerHeal','reindeerHealsUsed','lastTRexRoar','lastDragonShot','lastDragonRoar','slowUntil','stunUntil','ghostSlowUntil','dragonSlowUntil','trexSlowUntil','boostUntil','pulledUntil','pullFromUid','frogaStacks','tigerDamageStacks','tigerSpeedStacks','tigerSpeedUntil','splitDone','pufferBurst','orangeCat','unknownSummoned','judgementMark','abilitySuppressedByJudge','dragonBurns','snakePoisons','dragonPush','meleeDamage'];
+ const state={t:now};keys.forEach(k=>{if(f[k]!==undefined)state[k]=Array.isArray(f[k])?f[k].map(v=>({...v})):f[k];});return state;
+}
+function restoreTimelineState(f,snap,now){
+ const keys=['x','y','vx','vy','hp','maxHP','alive','evolving','evolveUntil','inSpace','stage','type','r','lastHit','lastShot','lastRoosterShot','lastEggoIIIShot','lastAntShot','lastUnicornShot','lastUnknownShot','lastSnakeShot','lastSnakeSkip','lastOrangeTimeStop','lastOrangeYarn','lastTigerRoar','lastRoboShot','lastPufferShot','lastReindeerHeal','reindeerHealsUsed','lastTRexRoar','lastDragonShot','lastDragonRoar','slowUntil','stunUntil','ghostSlowUntil','dragonSlowUntil','trexSlowUntil','boostUntil','pulledUntil','pullFromUid','frogaStacks','tigerDamageStacks','tigerSpeedStacks','tigerSpeedUntil','splitDone','pufferBurst','orangeCat','unknownSummoned','judgementMark','abilitySuppressedByJudge','dragonBurns','snakePoisons','dragonPush','meleeDamage'];
+ keys.forEach(k=>{if(snap[k]!==undefined)f[k]=Array.isArray(snap[k])?snap[k].map(v=>({...v})):snap[k];});
+ f.rewindSlowUntil=now+CONFIG.unicornRewindSlowDuration;updateFighterSize(f);updateName(f);
+}
+function activateUnicornRewind(f,now){
+ if(f.unicornRewindUsed)return;
+ const preservedUsed=true,from={x:f.x,y:f.y};
+ const allPaths=[];
+ // Rakan sepasukan dipulangkan 15 saat; semua musuh dipulangkan 7 saat.
+ fighters.forEach(o=>{
+  const rewindMs=o.team===f.team?CONFIG.unicornRewindWindow:7000;
+  const targetTime=now-rewindMs,hist=o.timelineHistory||[];
+  const snap=hist.filter(h=>h.t<=targetTime).slice(-1)[0];
+  if(!snap)return;
+  const points=hist.filter(h=>h.t>=snap.t&&h.t<=now&&h.x!==undefined).map(h=>({x:h.x,y:h.y}));
+  if(points.length>1)allPaths.push({color:o.color,points});
+  restoreTimelineState(o,snap,now);
+ });
+ f.unicornRewindUsed=preservedUsed;f.unicornBuffed=true;f.rewindVisualUntil=now+CONFIG.unicornRewindSlowDuration;
+ // Unicorn sendiri tetap mendapat buff walaupun snapshotnya menunjukkan status lebih awal.
+ f.alive=true;f.evolving=false;f.inSpace=false;f.rewindSlowUntil=now+CONFIG.unicornRewindSlowDuration;
+ effects.push({x:from.x,y:from.y,life:CONFIG.unicornRewindSlowDuration,max:CONFIG.unicornRewindSlowDuration,type:'rewind-burst',paths:allPaths});
+ effects.push({x:f.x,y:f.y,life:1500,max:1500,type:'rewind-flash'});
+ pendingWinnerCheck=false;anthoneCount={1:fighters.filter(o=>o.team===1&&o.type==='anthone').length,2:fighters.filter(o=>o.team===2&&o.type==='anthone').length};fighters.forEach(updateName);updateHUD();
+ $('status').textContent='🦄 TIME REWIND! Rakan sepasukan kembali 15 saat ke belakang, musuh 7 saat ke belakang — termasuk yang telah tersingkir!';
+}
+function recordUnicornStates(now){
+ // Kekalkan rekod ringkas Unicorn untuk keserasian; rekod penuh dibuat dalam rememberPositions.
+ fighters.filter(f=>f.type==='unicorn'&&f.alive&&!f.inSpace).forEach(f=>{if(!f.unicornHistory)f.unicornHistory=[];f.unicornHistory.push({t:now,x:f.x,y:f.y,hp:f.hp});while(f.unicornHistory.length&&f.unicornHistory[0].t<now-CONFIG.unicornRewindWindow-1000)f.unicornHistory.shift();});
+}
+
+function fireRobo(f,now){
+ if(f.type!=='robo'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<f.lastRoboShot)return;
+ const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;
+ const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.roosterShotSpeed,vy:dy/len*CONFIG.roosterShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.roboShotDamage,kind:'robo'});
+ f.lastRoboShot=now+CONFIG.roboShotEvery;
+}
+function fireUnknown(f,now){
+ if(f.type!=='unknown'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f))return;
+ if(now>=f.lastUnknownShot){
+  const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+  if(enemy){const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.roosterShotSpeed,vy:dy/len*CONFIG.roosterShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.unknownShotDamage,kind:'unknown'});f.lastUnknownShot=now+CONFIG.unknownShotEvery;}
+ }
+ if(!f.unknownSummoned&&now-gameStartedAt>=CONFIG.unknownUfoDelay){
+  const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+  if(enemy){
+   f.unknownSummoned=true;enemy.inSpace=true;enemy.spaceReturnUid=f.uid;
+   ufos.push({owner:f.team,x:f.x,y:f.y,hp:CONFIG.ufoHP,maxHP:CONFIG.ufoHP,targetUid:enemy.uid,summonedAt:now,crashAt:now+CONFIG.ufoSpaceDuration,lastHit:0,r:27,alive:true});effects.push({x:f.x,y:f.y,life:CONFIG.ufoSpaceDuration,max:CONFIG.ufoSpaceDuration,type:'ufo-abduct'});
+   updateHUD();$('status').textContent='🛸 Unknown P'+f.team+' memanggil UFO! '+characterName(enemy)+' P'+enemy.team+' diculik ke angkasa selama 7 saat.';
+  }
+ }
+}
+function updateUFOs(now){
+ for(let i=ufos.length-1;i>=0;i--){const u=ufos[i];if(!u.alive)continue;if(now<u.crashAt)continue;
+  const enemies=fighters.filter(f=>f.alive&&!f.evolving&&!f.inSpace&&f.team!==u.owner);
+  const crashTarget=enemies.sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0];
+  let x,y;
+  if(crashTarget){x=crashTarget.x;y=crashTarget.y;}
+  else{const angle=Math.random()*Math.PI*2,dist=Math.random()*(CONFIG.arenaRadius-45);x=canvas.width/2+Math.cos(angle)*dist;y=canvas.height/2+Math.sin(angle)*dist;}
+  const abducted=fighters.find(f=>f.uid===u.targetUid&&f.alive);
+  if(abducted){abducted.inSpace=false;abducted.spaceReturnUid=null;if(abducted!==crashTarget){const a=Math.random()*Math.PI*2,dist=Math.random()*(CONFIG.arenaRadius-45);abducted.x=canvas.width/2+Math.cos(a)*dist;abducted.y=canvas.height/2+Math.sin(a)*dist;}else{abducted.x=x;abducted.y=y;}const a=Math.random()*Math.PI*2;abducted.vx=Math.cos(a)*CONFIG.speed;abducted.vy=Math.sin(a)*CONFIG.speed;updateHUD();}
+  effects.push({x,y,life:1500,max:1500,type:'ufo-crash'});
+  fighters.filter(f=>f.alive&&!f.evolving&&!f.inSpace&&f.team!==u.owner&&Math.hypot(f.x-x,f.y-y)<=CONFIG.ufoBlastRadius+f.r).forEach(f=>damageFighter(f,CONFIG.ufoBlastDamage,u.owner,'ufo-blast'));
+  $('status').textContent='💥 UFO terhempas ke arah musuh! Letupan memberi 100 damage; jika tiada musuh dalam arena, lokasi rawak dipilih.';ufos.splice(i,1);
+ }
+}
+function fireAnthone(f,now){if(f.type!=='anthone'||!f.alive||f.evolving||abilitySuppressed(f)||now<f.lastAntShot||finished)return;const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];if(!enemy)return;const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;const familyCount=fighters.filter(a=>a.type==='anthone'&&a.team===f.team&&a.alive).length;const attackSpeedMultiplier=1+Math.max(0,familyCount-1)*CONFIG.anthoneCloneAttackSpeed;const critical=Math.random()<CONFIG.anthoneCriticalChance;antShots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.anthoneShotSpeed,vy:dy/len*CONFIG.anthoneShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:critical?CONFIG.anthoneCriticalDamage:CONFIG.anthoneShotDamage,critical});f.lastAntShot=now+CONFIG.anthoneShotEvery/attackSpeedMultiplier;}
+
+function fireUnicorn(f,now){
+ if(f.type!=='unicorn'||!f.alive||f.evolving||abilitySuppressed(f)||now<f.lastUnicornShot||finished)return;
+ const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;
+ const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ unicornShots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.unicornShotSpeed,vy:dy/len*CONFIG.unicornShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:5000});
+ f.lastUnicornShot=now+CONFIG.unicornShotEvery/(f.unicornBuffed?CONFIG.unicornRewindBuffAttackSpeed:1);
+}
+function rememberPositions(now){
+ fighters.forEach(f=>{
+  if(!f.timelineHistory)f.timelineHistory=[];
+  const last=f.timelineHistory[f.timelineHistory.length-1];
+  if(!last||now-last.t>=100)f.timelineHistory.push(timelineSnapshot(f,now));
+  while(f.timelineHistory.length&&f.timelineHistory[0].t<now-16000)f.timelineHistory.shift();
+  if(f.alive&&!f.inSpace){
+   if(!f.history)f.history=[];
+   f.history.push({t:now,x:f.x,y:f.y});
+   while(f.history.length&&f.history[0].t<now-16000)f.history.shift();
+  }
+ });
+}
+function positionAt(f,targetTime){
+ const h=f.history||[];
+ if(!h.length)return {x:f.x,y:f.y};
+ let best=h[0];
+ for(const point of h){if(point.t<=targetTime)best=point;else break;}
+ return {x:best.x,y:best.y};
+}
+function predictFuturePosition(f,seconds){
+ let x=f.x,y=f.y,vx=f.vx,vy=f.vy;
+ const steps=Math.ceil(seconds*60),step=seconds*60/steps;
+ for(let i=0;i<steps;i++){
+  x+=vx*step;y+=vy*step;
+  const dx=x-canvas.width/2,dy=y-canvas.height/2,dist=Math.hypot(dx,dy),limit=CONFIG.arenaRadius-f.r;
+  if(dist>limit){
+   const nx=dx/(dist||1),ny=dy/(dist||1);
+   x=canvas.width/2+nx*limit;y=canvas.height/2+ny*limit;
+   const dot=vx*nx+vy*ny;
+   if(dot>0){vx-=2*dot*nx;vy-=2*dot*ny;}
+  }
+ }
+ return {x,y};
+}
+function applyUnicornEffect(target,now){return '';}
+
+function updateUnicornShots(dt,now){
+ if(finished)return;
+ for(let i=unicornShots.length-1;i>=0;i--){
+  const q=unicornShots[i],target=fighters.find(f=>f.uid===q.targetUid&&f.alive&&!f.evolving&&!f.inSpace);
+  if(!target||target.team===q.owner){unicornShots.splice(i,1);continue;}
+  q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt*16.67;
+  if(Math.hypot(q.x-target.x,q.y-target.y)<target.r+12){
+   const unicornOwner=fighters.find(f=>f.uid===q.attackerUid)||null;const shotDamage=unicornOwner&&unicornOwner.unicornBuffed?CONFIG.unicornDamage*CONFIG.unicornRewindBuffDamage:CONFIG.unicornDamage;const dealt=damageFighter(target,shotDamage,q.owner,'unicorn',fighters.find(f=>f.uid===q.attackerUid)||null);
+   if(!finished){
+    if(dealt==='rabbit-dodge')$('status').textContent='🐰 DODGE! Rabbit P'+target.team+' mengelak serangan Unicorn P'+q.owner+'!';
+    else if(dealt==='miss')$('status').textContent='MISS! Serangan Unicorn P'+q.owner+' tidak memberi damage.';
+    else if(dealt===true){$('status').textContent='🦄 Unicorn P'+q.owner+' mengenakan '+Math.round(shotDamage)+' damage!';}
+   }
+   unicornShots.splice(i,1);continue;
+  }
+  if(q.life<=0||Math.hypot(q.x-canvas.width/2,q.y-canvas.height/2)>CONFIG.arenaRadius)unicornShots.splice(i,1);
+ }
+}
+
+function updateAntShots(dt){if(finished)return;for(let i=antShots.length-1;i>=0;i--){const q=antShots[i],target=fighters.find(f=>f.uid===q.targetUid&&f.alive&&!f.evolving&&!f.inSpace);if(!target||target.team===q.owner){antShots.splice(i,1);continue;}q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt*16.67;if(Math.hypot(q.x-target.x,q.y-target.y)<target.r+7){const hitDamage=q.damage||CONFIG.anthoneShotDamage;const result=damageFighter(target,hitDamage,q.owner,'anthone',fighters.find(f=>f.uid===q.attackerUid)||null);if(!finished&&result===true)$('status').textContent=q.critical?'💥 CRITICAL! Peluru Anthone P'+q.owner+' memberi 35 damage!':'🐜 Peluru Anthone P'+q.owner+' kena! 15 damage.';else if(!finished&&result==='rabbit-dodge')$('status').textContent='🐰 DODGE! Rabbit P'+target.team+' mengelak peluru Anthone P'+q.owner+'!';else if(!finished&&result==='miss')$('status').textContent='MISS! Peluru Anthone P'+q.owner+' tidak memberi damage.';antShots.splice(i,1);continue;}if(q.life<=0||Math.hypot(q.x-canvas.width/2,q.y-canvas.height/2)>CONFIG.arenaRadius)antShots.splice(i,1);}}
+function updateShots(dt){if(finished)return;for(let i=shots.length-1;i>=0;i--){const q=shots[i],target=fighters.find(f=>f.uid===q.targetUid&&f.alive&&!f.evolving&&!f.inSpace);if(!target){shots.splice(i,1);continue;}q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt*16.67;if(Math.hypot(q.x-target.x,q.y-target.y)<target.r+9){const result=damageFighter(target,q.damage||CONFIG.roosterShotDamage,q.owner,q.kind||'rooster',fighters.find(f=>f.uid===q.attackerUid)||null);if(result===true&&q.kind==='dragon-fire'){if(!target.dragonBurns)target.dragonBurns=[];target.dragonBurns.push({team:q.owner,nextTick:performance.now()+CONFIG.dragonBurnInterval,endAt:performance.now()+CONFIG.dragonBurnDuration,remaining:4});}if(result===true&&q.kind==='snake'){if(!target.snakePoisons)target.snakePoisons=[];target.snakePoisons.push({team:q.owner,nextTick:performance.now()+700,endAt:performance.now()+2000,remaining:2});}if(!finished&&result===true)$('status').textContent=(q.kind==='eggoIII'?'🐥 Peluru Eggo III':q.kind==='unknown'?'☄️ Meteor Unknown':q.kind==='snake'?'🟢 Peluru King Cobra':q.kind==='robo'?'🔺 Peluru Robo':q.kind==='puffer'?'🫧 Gelembung Puffer':q.kind==='dragon-fire'?'🔥 Nafas api Dragon':'🔸 Tembakan Rooster')+' P'+q.owner+' kena! '+(q.damage||CONFIG.roosterShotDamage)+' damage.';else if(!finished&&result==='rabbit-dodge')$('status').textContent='🐰 DODGE! Rabbit P'+target.team+' mengelak tembakan Rooster P'+q.owner+'!';else if(!finished&&result==='miss')$('status').textContent='MISS! Tembakan '+(q.kind==='eggoIII'?'Eggo III':q.kind==='unknown'?'Unknown':q.kind==='snake'?'King Cobra':q.kind==='robo'?'Robo':q.kind==='puffer'?'Puffer':q.kind==='dragon-fire'?'Dragon':'Rooster')+' P'+q.owner+' tidak memberi damage.';shots.splice(i,1);continue;}if(q.life<=0||Math.hypot(q.x-canvas.width/2,q.y-canvas.height/2)>CONFIG.arenaRadius)shots.splice(i,1);}}
+function keepFighterSpeed(f){
+ if(!f.alive)return;
+ updateFighterSize(f);
+ const current=Math.hypot(f.vx,f.vy)||1;
+ const now=performance.now();
+ const baseMultiplier=f.type==='robo'?CONFIG.roboSpeed/CONFIG.speed:(f.type==='intruder'&&!abilitySuppressed(f)&&now<(f.boostUntil||0)?CONFIG.intruderLungeMultiplier:(f.type==='froga'?FROGA_SPEED_MULTIPLIERS[Math.min(10,f.frogaStacks||0)]:1));const tigerMultiplier=now<(f.tigerSpeedUntil||0)?CONFIG.tigerSpeedMultiplier:1;const orangeMultiplier=f.type==='orange'&&f.orangeCat?CONFIG.orangeSpeedMultiplier:1;const pufferMultiplier=f.type==='puffer'&&f.pufferBurst?CONFIG.pufferBurstSpeed:1;const kangarooMultiplier=f.type==='kangaroo'&&now<(f.kangarooWindupUntil||0)?0.10:1;const demonChargeMultiplier=f.type==='demon'&&now<(f.demonChargingUntil||0)?0.10:1;const targetSpeed=CONFIG.speed*(f.pulledUntil>now?CONFIG.cowboyPullSpeedMultiplier:baseMultiplier)*tigerMultiplier*orangeMultiplier*pufferMultiplier*kangarooMultiplier*demonChargeMultiplier;
+ f.vx=f.vx/current*targetSpeed;
+ f.vy=f.vy/current*targetSpeed;
+}
+function meleeCollisionDamage(attacker,frogaStacks=0){
+ if(attacker.type==='anthone')return 0;
+ if(attacker.type==='cowboy')return CONFIG.cowboyMeleeDamage;
+ if(attacker.type==='zombie')return attacker.meleeDamage??CONFIG.zombieMeleeDamage;
+ if(attacker.type==='reindeer')return CONFIG.reindeerMeleeDamage;
+ if(attacker.type==='trex')return CONFIG.trexMeleeDamage;
+ if(attacker.type==='dragon')return CONFIG.dragonMeleeDamage;
+ if(attacker.type==='elephant')return CONFIG.elephantMeleeDamage;
+ if(attacker.type==='kangaroo')return CONFIG.kangarooMeleeDamage;
+ if(attacker.type==='demon')return CONFIG.demonMeleeDamage;
+ if(attacker.type==='puffer')return attacker.pufferBurst?CONFIG.pufferBurstMeleeDamage:CONFIG.pufferMeleeDamage;
+ if(attacker.type==='orange')return !abilitySuppressed(attacker)&&attacker.orangeCat?CONFIG.orangeCatMeleeDamage:CONFIG.orangeMeleeDamage;
+ if(attacker.type==='judge')return CONFIG.judgeMeleeDamage;
+ if(attacker.type==='snake')return CONFIG.snakeMeleeDamage;
+ if(attacker.type==='robo')return 0;
+ if(attacker.type==='tiger')return CONFIG.tigerMeleeDamage+(!abilitySuppressed(attacker)?Math.min(CONFIG.tigerMaxDamageStacks,attacker.tigerDamageStacks||0)*CONFIG.tigerDamageBonus:0);
+ if(attacker.type==='froga'){if(abilitySuppressed(attacker))return 10;return FROGA_DAMAGE_BY_STACK[Math.min(10,frogaStacks||0)];}
+ if(attacker.type==='intruder')return !abilitySuppressed(attacker)&&attacker.hp/attacker.maxHP<CONFIG.intruderLowHPThreshold?CONFIG.intruderCollisionDamage+CONFIG.intruderLowHPBonus:CONFIG.intruderCollisionDamage;
+ if(attacker.type==='eggo')return CONFIG.eggoMeleeDamage[attacker.stage]||0;
+ return 0;
+}
+function collide(a,b,now){
+ if(!a.alive||!b.alive||a.evolving||b.evolving||a.inSpace||b.inSpace)return;
+ const friendly=a.team===b.team;
+ let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;
+ // Ghost menembusi semua karakter: tiada lantunan. Tiada lagi curi HP.
+ // Musuh jenis melee masih boleh mengenakan damage kepada Ghost ketika bertembung.
+ if(a.type==='ghost'||b.type==='ghost'){
+  const ghost=a.type==='ghost'?a:b,other=ghost===a?b:a;
+  if(dist<min){
+   if(!friendly&&!other.evolving){
+    if(!abilitySuppressed(ghost)){
+     ghost.ghostTouching=true;
+     if(!ghost.ghostContacts)ghost.ghostContacts=new Map();
+     let contact=ghost.ghostContacts.get(other.uid);
+     if(!contact){contact={lastDamageAt:now};ghost.ghostContacts.set(other.uid,contact);}
+     other.ghostSlowUntil=now+120;
+     if(now-contact.lastDamageAt>=CONFIG.ghostDamageInterval){
+      const result=damageFighter(other,CONFIG.ghostDamagePerTick,ghost.team,'ghost-drain',ghost);
+      if(result===true){contact.lastDamageAt=now;$('status').textContent='👻 Ghost mengenakan '+CONFIG.ghostDamagePerTick+' damage setiap 0.1 saat kepada '+characterName(other)+'! Slow 50%.';}
+      else if(result==='rabbit-dodge'||result==='miss')contact.lastDamageAt=now;
+     }
+    }else{ghost.ghostTouching=false;}
+    const meleeDamage=meleeCollisionDamage(other,other.frogaStacks||0);
+    if(meleeDamage>0&&now-ghost.lastHit>CONFIG.collisionCooldown&&now-other.lastHit>CONFIG.collisionCooldown){
+     damageFighter(ghost,meleeDamage,other.team,'melee',other);
+     ghost.lastHit=other.lastHit=now;
+     if(!finished)$('status').textContent='👊 '+characterName(other)+' P'+other.team+' memukul Ghost! '+meleeDamage+' damage.';
+    }
+   }
+  }else if(ghost.ghostContacts)ghost.ghostContacts.delete(other.uid);
+  return;
+ }
+ if(dist>=min)return;
+ let nx=dist?dx/dist:1,ny=dist?dy/dist:0;
+ // Simpan momentum sebelum reset supaya damage berdasarkan kelajuan ketika terkena musuh.
+ const frogaStacksA=a.frogaStacks||0, frogaStacksB=b.frogaStacks||0;
+ if(a.team!==b.team){if(a.type==='froga')a.frogaStacks=0;if(b.type==='froga')b.frogaStacks=0;}
+ let overlap=min-dist;
+ // Pisahkan karakter supaya mereka tidak terperangkap bertindih.
+ a.x-=nx*(overlap/2+0.5);a.y-=ny*(overlap/2+0.5);
+ b.x+=nx*(overlap/2+0.5);b.y+=ny*(overlap/2+0.5);
+
+ let rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+ // Damage hanya berlaku ketika mereka benar-benar bergerak menghampiri,
+ // bukan pada setiap frame mereka masih bersentuhan.
+ if(rel<0){
+  let impulse=rel;
+  a.vx+=impulse*nx;a.vy+=impulse*ny;
+  b.vx-=impulse*nx;b.vy-=impulse*ny;
+  // Perlanggaran mengubah arah sahaja, bukan kelajuan karakter.
+  keepFighterSpeed(a);keepFighterSpeed(b);
+
+  if(!friendly&&now-a.lastHit>CONFIG.collisionCooldown && now-b.lastHit>CONFIG.collisionCooldown){
+   const damageA=meleeCollisionDamage(b,frogaStacksB),damageB=meleeCollisionDamage(a,frogaStacksA);
+   if(damageA>0)damageFighter(a,damageA,b.id,'melee',b);
+   if(damageB>0)damageFighter(b,damageB,a.id,'melee',a);
+   a.lastHit=b.lastHit=now;
+   if((damageA||damageB)&&!finished){$('status').textContent='Pertembungan! '+(damageA?'P'+b.id+' memberi '+damageA+' damage kepada P'+a.id+'. ':'')+(damageB?'P'+a.id+' memberi '+damageB+' damage kepada P'+b.id+'. ':'');}
+
+  }
+ }
+}
+function collideUFOs(now){
+ for(const u of ufos){if(!u.alive)continue;for(const f of fighters){if(!f.alive||f.inSpace||f.evolving||f.team===u.owner)continue;const d=Math.hypot(f.x-u.x,f.y-u.y);if(d<f.r+u.r&&now-u.lastHit>CONFIG.ufoContactDamageCooldown){const dmg=meleeCollisionDamage(f,f.frogaStacks||0);if(dmg>0){u.hp=Math.max(0,u.hp-dmg);u.lastHit=now;$('status').textContent='👊 '+characterName(f)+' menyerang UFO! '+dmg+' damage kepada UFO.';if(u.hp<=0){const abducted=fighters.find(t=>t.uid===u.targetUid);if(abducted){abducted.inSpace=false;abducted.spaceReturnUid=null;abducted.x=u.x;abducted.y=u.y;updateHUD();}$('status').textContent='🛸 UFO dimusnahkan! Musuh yang diculik dipulangkan awal.';ufos.splice(ufos.indexOf(u),1);}break;}}}}
+}
+function kangarooCharge(f,now){
+ if(f.type!=='kangaroo'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<(f.lastKangarooCharge||0)||f.kangarooWindupUntil>now||f.kangarooDashActive)return;
+ const target=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!target)return;
+ f.lastKangarooCharge=now+CONFIG.kangarooChargeEvery;
+ const dx=target.x-f.x,dy=target.y-f.y,len=Math.hypot(dx,dy)||1;
+ f.kangarooHitTarget=false;f.kangarooTargetUid=target.uid;f.kangarooChargeDir={x:dx/len,y:dy/len};
+ f.kangarooWindupUntil=now+450;f.kangarooChargingUntil=f.kangarooWindupUntil;
+ f.vx=dx/len*CONFIG.speed*0.1;f.vy=dy/len*CONFIG.speed*0.1;
+ effects.push({x:f.x,y:f.y,life:450,max:450,type:'kangaroo-charge',dx:dx/len,dy:dy/len});
+ $('status').textContent='🦘 KANGAROO BERSIAP! '+characterName(target)+' menjadi sasaran!';
+}
+function updateKangarooDash(now,dt){
+ fighters.forEach(f=>{
+  if(f.type!=='kangaroo'||!f.alive||!f.kangarooTargetUid||f.kangarooHitTarget)return;
+  if(now<(f.kangarooWindupUntil||0))return;
+  const target=fighters.find(t=>t.uid===f.kangarooTargetUid&&t.alive&&!t.evolving&&!t.inSpace&&t.team!==f.team);
+  if(!target){f.kangarooTargetUid=null;f.kangarooDashActive=false;return;}
+  f.kangarooDashActive=true;
+  const dx=target.x-f.x,dy=target.y-f.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+  const step=Math.min(len,CONFIG.speed*6.5*dt);
+  f.x+=ux*step;f.y+=uy*step;f.kangarooChargeDir={x:ux,y:uy};
+  effects.push({x:f.x,y:f.y,life:100,max:100,type:'kangaroo-charge',dx:ux,dy:uy});
+  if(len<=f.r+target.r+step+3){
+   f.x=target.x-ux*(f.r+target.r-2);f.y=target.y-uy*(f.r+target.r-2);
+   target.kangarooPush={dx:ux,dy:uy};target.kangarooPushOwner=f.uid;
+   damageFighter(target,CONFIG.kangarooMeleeDamage,f.team,'kangaroo-charge',f);
+   f.kangarooHitTarget=true;f.kangarooDashActive=false;f.kangarooTargetUid=null;f.vx=ux*CONFIG.speed;f.vy=uy*CONFIG.speed;
+   effects.push({x:target.x,y:target.y,life:420,max:420,type:'kangaroo-impact',dx:ux,dy:uy});
+   $('status').textContent='🦘 BOOM! KANGAROO MELANGGAR '+characterName(target)+'! KNOCKBACK!';
+  }else if(step>=len-0.1){f.kangarooDashActive=false;f.kangarooTargetUid=null;}
+ });
+}
+function updateKangarooPushes(now,dt){
+ fighters.forEach(t=>{const p=t.kangarooPush;if(!p||!t.alive||t.inSpace)return;const cx=canvas.width/2,cy=canvas.height/2,limit=CONFIG.arenaRadius-t.r-2;const nx=t.x+p.dx*CONFIG.kangarooPushSpeed*dt-cx,ny=t.y+p.dy*CONFIG.kangarooPushSpeed*dt-cy,dist=Math.hypot(nx,ny);if(dist>=limit){const scale=limit/(dist||1);t.x=cx+nx*scale;t.y=cy+ny*scale;t.kangarooPush=null;t.kangarooPushOwner=null;t.stunUntil=Math.max(t.stunUntil||0,now+CONFIG.kangarooStunDuration);effects.push({x:t.x,y:t.y,life:650,max:650,type:'kangaroo-wall'});$('status').textContent='🦘 MUSUH DIHENTAM KE DINDING! STUN 1 saat!';}else{t.x=cx+nx;t.y=cy+ny;}});
+}
+function updateDemonHell(f,now){
+ if(f.type!=='demon'||!f.alive||f.evolving||f.inSpace||finished)return;
+ if(!f.demonAbilityUsed&&!abilitySuppressed(f)&&now>=gameStartedAt+CONFIG.demonActivationDelay){
+  f.demonAbilityUsed=true;
+  f.demonChargingUntil=now+CONFIG.demonChargeDuration;
+  f.demonHellStartAt=f.demonChargingUntil;
+  f.demonHellUntil=0;
+  f.demonHellTargets={};
+  effects.push({x:f.x,y:f.y,life:CONFIG.demonChargeDuration,max:CONFIG.demonChargeDuration,type:'demon-charge'});
+  $('status').textContent='👹 DEMON SEDANG MENGUMPUL TENAGA...';
+ }
+ // Charge 2 saat ialah animasi persediaan sahaja. Neraka bermula selepas charge tamat.
+ if(f.demonAbilityUsed&&f.demonHellStartAt&&now>=f.demonHellStartAt&&!f.demonHellStarted){
+  f.demonHellStarted=true;
+  f.demonHellUntil=now+CONFIG.demonHellDuration;
+  f.demonNextHeal=now;
+  fighters.filter(t=>t.team!==f.team&&t.alive&&!t.evolving&&!t.inSpace).forEach(t=>{
+   f.demonHellTargets[t.uid]=now+CONFIG.demonHellDamageEvery;
+  });
+  effects.push({x:canvas.width/2,y:canvas.height/2,life:520,max:520,type:'demon-flash'});
+  $('status').textContent='👹 FLASH MERAH! ARENA BERTUKAR MENJADI NERAKA SELAMA 6 SAAT!';
+ }
+ if(now<(f.demonHellUntil||0)){
+  while(f.demonNextHeal&&now>=f.demonNextHeal&&f.hp>0){f.hp=Math.min(f.maxHP,f.hp+CONFIG.demonHealAmount);f.demonNextHeal+=CONFIG.demonHealEvery;}
+  for(const uid of Object.keys(f.demonHellTargets||{})){
+   const target=fighters.find(t=>t.uid===Number(uid));if(!target||!target.alive||target.evolving||target.inSpace){delete f.demonHellTargets[uid];continue;}
+   while(now>=f.demonHellTargets[uid]&&now<f.demonHellUntil&&target.alive){damageFighter(target,CONFIG.demonHellDamage,f.team,'demon-hell',null);f.demonHellTargets[uid]+=CONFIG.demonHellDamageEvery;}
+  }
+ }
+}
+function tigerRoar(f,now){
+ if(f.type!=='tiger'||!f.alive||f.evolving||finished||abilitySuppressed(f)||now<f.lastTigerRoar)return;
+ f.lastTigerRoar=now+CONFIG.tigerRoarEvery;
+ f.tigerDamageStacks=Math.min(CONFIG.tigerMaxDamageStacks,(f.tigerDamageStacks||0)+1);
+ teamRoarBuff[f.team]={until:now+CONFIG.tigerTeamBuffDuration,damage:0};
+ fighters.filter(a=>a.team===f.team&&a.alive&&!a.evolving).forEach(a=>{
+  a.tigerSpeedUntil=now+CONFIG.tigerTeamBuffDuration;
+  keepFighterSpeed(a);
+ });
+ effects.push({x:f.x,y:f.y,life:500,max:500,type:'roar'});
+ $('status').textContent='🐯 TIGER P'+f.team+' MENGAUM! Tiger dan pasukan mendapat +190% kelajuan selama 2 saat. Damage Tiger kini '+(CONFIG.tigerMeleeDamage+f.tigerDamageStacks*CONFIG.tigerDamageBonus)+' (stack '+f.tigerDamageStacks+'/15).';
+}
+
+function activateOrangeTimeStop(f,now){
+ if(f.type!=='orange'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<(f.lastOrangeTimeStop||0)||orangeTimeStopOwnerUid!==null)return;
+ f.lastOrangeTimeStop=now+CONFIG.orangeTimeStopEvery;
+ f.orangeCat=true;f.lastOrangeYarn=now;orangeTimeStopOwnerUid=f.uid;orangeTimeStopStartedAt=now;orangeTimeStopUntil=now+CONFIG.orangeTimeStopDuration;
+ effects.push({x:f.x,y:f.y,life:1450,max:1450,type:'orange-stop'});effects.push({x:f.x,y:f.y,life:900,max:900,type:'orange-stop-flash'});
+ $('status').textContent='😼 ORANGE TIME STOP! Seluruh arena dibekukan selama 6.2 saat — Orange sahaja boleh bergerak dan menyerang!';
+ updateFighterSize(f);keepFighterSpeed(f);
+}
+function fireOrangeYarn(f,now){
+ if(f.type!=='orange'||!f.alive||finished||abilitySuppressed(f)||now<(f.lastOrangeYarn||0))return;
+ const yarnInterval=f.orangeCat?CONFIG.orangeTimeStopYarnEvery:CONFIG.orangeYarnEvery;
+ const enemy=fighters.filter(o=>o.uid!==f.uid&&o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;
+ const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.orangeYarnSpeed,vy:dy/len*CONFIG.orangeYarnSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.orangeYarnDamage,kind:'orange-yarn'});
+ f.lastOrangeYarn=now+yarnInterval;
+}
+function endOrangeTimeStop(now){
+ if(orangeTimeStopOwnerUid===null||now<orangeTimeStopUntil)return;
+ const elapsed=now-orangeTimeStopStartedAt,owner=fighters.find(f=>f.uid===orangeTimeStopOwnerUid);
+ fighters.forEach(f=>{if(f.uid===orangeTimeStopOwnerUid)return;
+  ['lastShot','lastRoosterShot','lastEggoIIIShot','lastAntShot','lastUnicornShot','lastUnknownShot','lastSnakeShot','lastSnakeSkip','lastTigerRoar','lastRoboShot','lastOrangeTimeStop','lastOrangeYarn','stunUntil','slowUntil','ghostSlowUntil','boostUntil','pulledUntil','snakeResumeAt','lastHit','lastCowboyPull','tigerSpeedUntil','lastPufferShot','lastReindeerHeal','lastTRexRoar','trexSlowUntil'].forEach(k=>{if(typeof f[k]==='number'&&f[k]>0)f[k]+=elapsed;});
+  if(f.ghostContacts instanceof Map)f.ghostContacts.forEach(c=>{if(c&&typeof c.lastDamageAt==='number')c.lastDamageAt+=elapsed;});
+ });
+ Object.values(teamRoarBuff).forEach(b=>{if(b&&typeof b.until==='number'&&b.until>0)b.until+=elapsed;});
+ ufos.forEach(u=>{if(typeof u.crashAt==='number')u.crashAt+=elapsed;});
+ gameStartedAt+=elapsed;
+ if(owner){owner.orangeCat=false;owner.lastOrangeYarn=now+CONFIG.orangeYarnEvery;keepFighterSpeed(owner);$('status').textContent='🐱 Orange kembali normal. Time Stop tamat!';}
+ orangeTimeStopOwnerUid=null;orangeTimeStopUntil=0;orangeTimeStopStartedAt=0;updateHUD();
+}
+
+function firePuffer(f,now){
+ if(f.type!=='puffer'||!f.alive||f.pufferBurst||f.evolving||finished||abilitySuppressed(f)||now<(f.lastPufferShot||0))return;
+ const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace&&!o.pufferBurst).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;const dx=enemy.x-f.x,dy=enemy.y-f.y,len=Math.hypot(dx,dy)||1;
+ shots.push({x:f.x,y:f.y,vx:dx/len*CONFIG.roosterShotSpeed,vy:dy/len*CONFIG.roosterShotSpeed,owner:f.team,attackerUid:f.uid,targetUid:enemy.uid,life:4000,damage:CONFIG.pufferShotDamage,kind:'puffer'});f.lastPufferShot=now+CONFIG.pufferShotEvery;
+}
+function reindeerHeal(f,now){
+ if(f.type!=='reindeer'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||(f.reindeerHealsUsed||0)>=CONFIG.reindeerHealUses||now<(f.lastReindeerHeal||0))return;
+ const healed=[];fighters.filter(a=>a.team===f.team&&a.alive&&!a.evolving&&!a.inSpace&&!a.pufferBurst&&a.hp<a.maxHP).forEach(a=>{const before=a.hp;a.hp=Math.min(a.maxHP,a.hp+CONFIG.reindeerHealAmount);if(a.hp>before)healed.push(a);});
+ f.reindeerHealsUsed=(f.reindeerHealsUsed||0)+1;f.lastReindeerHeal=now+CONFIG.reindeerHealEvery;
+ effects.push({x:f.x,y:f.y,life:650,max:650,type:'heal'});$('status').textContent='🦌 REINDEER P'+f.team+' menggunakan heal '+f.reindeerHealsUsed+'/4: pulih 80 HP untuk ahli pasukan!';updateHUD();
+}
+function trexRoar(f,now){
+ if(f.type!=='trex'||!f.alive||f.evolving||f.inSpace||finished||abilitySuppressed(f)||now<(f.lastTRexRoar||0))return;
+ const enemies=fighters.filter(a=>a.team!==f.team&&a.alive&&!a.evolving&&!a.inSpace&&!a.pufferBurst);
+ enemies.forEach(a=>{a.hp=Math.max(1,a.hp*0.5);updateFighterSize(a);});updateHUD();
+ f.lastTRexRoar=now+CONFIG.trexRoarEvery;f.trexSlowUntil=now+1450;trexShakeUntil=now+1450;effects.push({x:f.x,y:f.y,life:1450,max:1450,type:'trex-roar'});effects.push({x:f.x,y:f.y,life:1100,max:1100,type:'trex-roar'});
+ if(!finished)$('status').textContent='🦖 T-REX P'+f.team+' MENGAUM! Semua musuh kehilangan 50% HP semasa itu (tidak boleh membunuh)!';updateHUD();
+}
+
+
+function fireCowboyPull(f,now){
+ if(f.type!=='cowboy'||!f.alive||f.evolving||finished||abilitySuppressed(f)||now-f.lastCowboyPull<CONFIG.cowboyPullEvery)return;
+ const enemy=fighters.filter(o=>o.team!==f.team&&o.alive&&!o.evolving&&!o.inSpace).sort((a,b)=>Math.hypot(a.x-f.x,a.y-f.y)-Math.hypot(b.x-f.x,b.y-f.y))[0];
+ if(!enemy)return;
+ enemy.pulledUntil=now+CONFIG.cowboyPullDuration;enemy.pullFromUid=f.uid;
+ const dx=f.x-enemy.x,dy=f.y-enemy.y,len=Math.hypot(dx,dy)||1;
+ enemy.vx=dx/len*CONFIG.speed*CONFIG.cowboyPullSpeedMultiplier;enemy.vy=dy/len*CONFIG.speed*CONFIG.cowboyPullSpeedMultiplier;
+ f.lastCowboyPull=now;
+ effects.push({x:f.x,y:f.y,tx:enemy.x,ty:enemy.y,life:CONFIG.cowboyPullDuration,max:CONFIG.cowboyPullDuration,type:'lasso'});
+ $('status').textContent='🤠 Cowboy P'+f.team+' menarik '+characterName(enemy)+' P'+enemy.team+' ke arahnya!';
+}
+function updateCarrots(dt){
+ if(finished)return;
+ for(let i=carrots.length-1;i>=0;i--){
+  let c=carrots[i],target=fighters.find(f=>f.uid===c.targetUid&&f.alive&&!f.evolving&&!f.inSpace);
+  // Peluru tidak boleh mengenai penembak sendiri atau sasaran yang sudah mati.
+  if(!target||target.team===c.owner){carrots.splice(i,1);continue;}
+  // Lobak kekal pada arah asal ketika ditembak; tiada homing.
+  c.x+=c.vx*dt;c.y+=c.vy*dt;c.life-=dt*16.67;
+  if(target&&Math.hypot(c.x-target.x,c.y-target.y)<target.r+9){
+   const critical=Math.random()<CONFIG.rabbitCriticalChance;const carrotDamage=critical?CONFIG.rabbitCriticalDamage:CONFIG.carrotDamage;const result=damageFighter(target,carrotDamage,c.owner,'carrot',fighters.find(f=>f.uid===c.attackerUid)||null);if(!finished&&result===true)$('status').textContent=critical?'💥 CRITICAL! Lobak Rabbit P'+c.owner+' memberi 70 damage!':'🥕 Lobak Rabbit P'+c.owner+' mengenai musuh! 15 damage.';else if(!finished&&result==='rabbit-dodge')$('status').textContent='🐰 DODGE! Rabbit P'+target.team+' mengelak lobak P'+c.owner+'!';else if(!finished&&result==='miss')$('status').textContent='MISS! Lobak Rabbit P'+c.owner+' tidak memberi damage.';carrots.splice(i,1);continue;
+  }
+  let dx=c.x-canvas.width/2,dy=c.y-canvas.height/2;
+  if(c.life<=0||Math.hypot(dx,dy)>CONFIG.arenaRadius)carrots.splice(i,1);
+ }
+}
+function finish(winner){if(finished)return;finished=true;running=true;victoryTeam=winner;victoryStartedAt=performance.now();victoryConfetti=Array.from({length:150},()=>({x:Math.random()*canvas.width,y:-Math.random()*canvas.height,vx:(Math.random()-.5)*3,vy:2+Math.random()*5,size:4+Math.random()*7,rot:Math.random()*6.28,spin:(Math.random()-.5)*.18,hue:Math.random()*360}));carrots=[];shots=[];antShots=[];unicornShots=[];ufos.forEach(u=>{const t=fighters.find(f=>f.uid===u.targetUid);if(t){t.inSpace=false;t.spaceReturnUid=null;}});ufos=[];fighters.forEach(f=>{if(f.hp<=0&&!f.evolving&&!(f.type==='eggo'&&f.stage<4))f.alive=false});$('status').textContent=winner?'🏆 TEAM '+winner+' MENANG! — VICTORY CELEBRATION!':'🤝 SERI! — DRAW CELEBRATION!';last=performance.now();raf=requestAnimationFrame(loop)}
+const FROGA_SPEED_MULTIPLIERS=[1,1.05,1.15,1.30,1.50,1.75,2.05,2.40,2.80,3.25,3.75];
+const FROGA_DAMAGE_BY_STACK=[10,20,30,40,55,70,90,110,120,120,120];
+function frogaColor(f){const stacks=f.frogaStacks||0;if(stacks>=10)return '#ef4444';if(stacks>=8)return '#f97316';if(stacks>=6)return '#facc15';if(stacks>=3)return '#22c55e';return f.color;}
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ const shakeNow=performance.now();ctx.save();if(shakeNow<trexShakeUntil){const strength=8*((trexShakeUntil-shakeNow)/1450);ctx.translate((Math.random()-0.5)*strength*2,(Math.random()-0.5)*strength*2);}
+ const cx=canvas.width/2,cy=canvas.height/2,arenaR=CONFIG.arenaRadius;
+ ctx.save();
+ ctx.beginPath();ctx.arc(cx,cy,arenaR,0,Math.PI*2);ctx.clip();
+ ctx.fillStyle='#070b14';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle='rgba(100,130,180,.10)';ctx.lineWidth=1;
+ for(let x=42;x<canvas.width;x+=42){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
+ for(let y=42;y<canvas.height;y+=42){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
+ if(orangeTimeStopOwnerUid!==null&&performance.now()<orangeTimeStopUntil){ctx.fillStyle='rgba(255,132,20,.34)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='rgba(255,205,110,.22)';ctx.lineWidth=3;for(let k=0;k<canvas.width+canvas.height;k+=70){ctx.beginPath();ctx.moveTo(k,0);ctx.lineTo(k-canvas.height,canvas.height);ctx.stroke();}}
+ const hellActive=fighters.some(f=>f.type==='demon'&&f.demonHellUntil>performance.now());if(hellActive){const tm=performance.now(),pulse=.5+.5*Math.sin(tm/180);ctx.fillStyle='rgba(190,8,5,'+(.43+.13*pulse)+')';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalCompositeOperation='lighter';for(let k=0;k<9;k++){const x=38+k*78+Math.sin(tm/310+k*1.7)*5;const base=cy+arenaR-7;const h=32+((k*17)%37)+Math.sin(tm/150+k)*8;ctx.fillStyle='rgba(255,65,8,'+(.28+.16*pulse)+')';ctx.beginPath();ctx.moveTo(x-13,base);ctx.quadraticCurveTo(x-17,base-h*.55,x-4,base-h);ctx.quadraticCurveTo(x+2,base-h*.48,x+7,base-h*1.12);ctx.quadraticCurveTo(x+19,base-h*.5,x+13,base);ctx.closePath();ctx.fill();}for(let k=0;k<8;k++){const x=45+k*87+Math.sin(tm/390+k)*10;const y=cy+arenaR-18-((tm/7+k*53)%112);ctx.fillStyle='rgba(255,190,65,.78)';ctx.beginPath();ctx.arc(x,y,2+(k%2),0,Math.PI*2);ctx.fill();}ctx.globalCompositeOperation='source-over';ctx.fillStyle='rgba(255,180,90,.95)';ctx.font='bold 17px system-ui';ctx.textAlign='center';ctx.fillText('🔥 N E R A K A 🔥',cx,cy-arenaR+32);}
+ ctx.restore();
+ ctx.beginPath();ctx.arc(cx,cy,arenaR,0,Math.PI*2);ctx.strokeStyle='#52698e';ctx.lineWidth=5;ctx.stroke();
+ antShots.forEach(q=>{ctx.save();ctx.fillStyle='#f5e7b2';ctx.fillRect(q.x-4,q.y-4,8,8);ctx.restore()});unicornShots.forEach(q=>{ctx.save();ctx.translate(q.x,q.y);ctx.font='23px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🌈',0,0);ctx.restore()});shots.forEach(q=>{ctx.save();ctx.translate(q.x,q.y);ctx.font='20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(q.kind==='unknown'?'☄️':q.kind==='snake'?'🟢':q.kind==='robo'?'🔺':q.kind==='orange-yarn'?'🧶':q.kind==='puffer'?'🫧':q.kind==='dragon-fire'?'🔥':'🔸',0,0);ctx.restore()});ufos.forEach(u=>{ctx.save();const pulse=1+Math.sin(performance.now()/115)*0.09;ctx.translate(u.x,u.y);ctx.scale(pulse,pulse);ctx.shadowColor='#65eaff';ctx.shadowBlur=24;ctx.fillStyle='rgba(85,225,255,.20)';ctx.beginPath();ctx.ellipse(0,23,34,10,0,0,Math.PI*2);ctx.fill();ctx.font='bold 34px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🛸',0,0);ctx.shadowBlur=0;ctx.font='bold 11px system-ui';ctx.fillStyle='#fff';ctx.fillText(Math.ceil(u.hp)+' HP',0,-29);ctx.restore()});effects.forEach(e=>{ctx.save();ctx.globalAlpha=Math.max(0,e.life/e.max);if(e.type==='egg-explosion'||e.type==='rooster-explosion'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);const maxR=e.type==='egg-explosion'?112:145;const r=12+p*maxR;ctx.globalCompositeOperation='lighter';ctx.shadowColor='#ff6a16';ctx.shadowBlur=34;const grad=ctx.createRadialGradient(0,0,2,0,0,Math.max(3,r*.72));grad.addColorStop(0,'rgba(255,255,220,'+(0.95*(1-p*.55))+')');grad.addColorStop(.22,'rgba(255,232,92,'+(0.95*(1-p))+')');grad.addColorStop(.58,'rgba(255,105,24,'+(0.78*(1-p))+')');grad.addColorStop(1,'rgba(180,35,8,0)');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();for(let k=0;k<3;k++){ctx.beginPath();ctx.strokeStyle=k===0?'rgba(255,250,190,.95)':'rgba(255,125,35,.85)';ctx.lineWidth=7-k*2;ctx.arc(0,0,Math.max(1,10+p*(maxR*.8+k*22)),0,Math.PI*2);ctx.stroke();}for(let k=0;k<22;k++){const a=k*Math.PI*2/22+(k%2)*.12,d=18+p*(65+(k%5)*17),len=12+(k%4)*5;ctx.strokeStyle=k%3===0?'#fff7c4':k%3===1?'#ffb347':'#ff5722';ctx.lineWidth=2.5+(k%3);ctx.beginPath();ctx.moveTo(Math.cos(a)*d,Math.sin(a)*d);ctx.lineTo(Math.cos(a)*(d+len),Math.sin(a)*(d+len));ctx.stroke();}for(let k=0;k<9;k++){const a=k*2.399+p*1.4,d=16+p*(24+(k%3)*13);ctx.fillStyle=k%2?'rgba(75,75,75,.55)':'rgba(255,190,75,.8)';ctx.beginPath();ctx.arc(Math.cos(a)*d,Math.sin(a)*d,3+(1-p)*4,0,Math.PI*2);ctx.fill();}ctx.restore();}if(e.type==='ufo-abduct'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);const wobble=Math.sin(performance.now()/75)*5;ctx.shadowColor='#7cecff';ctx.shadowBlur=26;ctx.strokeStyle='rgba(112,239,255,.9)';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,0,24+p*28+wobble,13+p*20,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(88,220,255,.16)';ctx.beginPath();ctx.moveTo(-22,-8);ctx.lineTo(22,-8);ctx.lineTo(11,-105);ctx.lineTo(-11,-105);ctx.closePath();ctx.fill();for(let k=0;k<8;k++){const a=k*Math.PI/4+performance.now()/500;ctx.fillStyle=k%2?'#b9fbff':'#fff3a6';ctx.beginPath();ctx.arc(Math.cos(a)*(30+p*22),Math.sin(a)*(17+p*14),2.5,0,Math.PI*2);ctx.fill();}ctx.restore();}if(e.type==='ufo-crash'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.globalCompositeOperation='lighter';const radius=20+p*175;ctx.shadowColor='#65eaff';ctx.shadowBlur=42;const blast=ctx.createRadialGradient(0,0,2,0,0,Math.max(4,radius*.72));blast.addColorStop(0,'rgba(255,255,235,'+(0.95*(1-p*.6))+')');blast.addColorStop(.2,'rgba(156,250,255,'+(0.9*(1-p))+')');blast.addColorStop(.55,'rgba(54,190,255,'+(0.65*(1-p))+')');blast.addColorStop(1,'rgba(15,75,160,0)');ctx.fillStyle=blast;ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.fill();for(let k=0;k<5;k++){ctx.beginPath();ctx.strokeStyle=k%2?'rgba(125,237,255,.95)':'rgba(255,244,174,.98)';ctx.lineWidth=8-k;ctx.arc(0,0,Math.max(1,12+p*(radius*.78+k*18)),0,Math.PI*2);ctx.stroke();}for(let k=0;k<28;k++){const a=k*Math.PI*2/28+p*2.8,d=20+p*(65+(k%5)*24),len=15+(k%4)*7;ctx.strokeStyle=k%3?'#baf7ff':'#fff0a6';ctx.lineWidth=2.5+(k%3);ctx.beginPath();ctx.moveTo(Math.cos(a)*d,Math.sin(a)*d);ctx.lineTo(Math.cos(a)*(d+len),Math.sin(a)*(d+len));ctx.stroke();}for(let k=0;k<10;k++){const a=k*2.399+p*1.8,d=22+p*(30+(k%4)*18);ctx.fillStyle=k%2?'rgba(70,190,255,.8)':'rgba(255,231,145,.9)';ctx.beginPath();ctx.arc(Math.cos(a)*d,Math.sin(a)*d,3+(1-p)*4,0,Math.PI*2);ctx.fill();}ctx.restore();}if(e.type==='lasso'){const p=1-e.life/e.max;ctx.save();const ex=e.x+(e.tx-e.x)*(1-p*.72),ey=e.y+(e.ty-e.y)*(1-p*.72);const dx=ex-e.x,dy=ey-e.y,len=Math.hypot(dx,dy)||1;const nx=-dy/len,ny=dx/len;ctx.lineCap='round';ctx.shadowColor='#ffd36b';ctx.shadowBlur=22;ctx.strokeStyle='rgba(255,214,112,.98)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.quadraticCurveTo((e.x+ex)/2+nx*18,(e.y+ey)/2+ny*18,ex,ey);ctx.stroke();ctx.strokeStyle='rgba(255,248,205,.95)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.quadraticCurveTo((e.x+ex)/2+nx*18,(e.y+ey)/2+ny*18,ex,ey);ctx.stroke();ctx.translate(ex,ey);ctx.rotate(p*7);ctx.lineWidth=4;ctx.strokeStyle='#ffe9a6';ctx.beginPath();ctx.ellipse(0,0,13+p*7,9+p*5,p*.7,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(0,0,19+p*10,0,Math.PI*2);ctx.stroke();ctx.restore();}if(e.type==='dragon-push'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.dy,e.dx));ctx.shadowColor='#ff342f';ctx.shadowBlur=25;ctx.strokeStyle='rgba(255,75,55,.95)';ctx.lineWidth=5;for(let k=0;k<6;k++){ctx.beginPath();ctx.moveTo(-24-k*12,-22+k*9);ctx.lineTo(22+p*62-k*8,-22+k*9);ctx.stroke();}ctx.restore();}if(e.type==='dragon-wall'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.shadowColor='#ff3c32';ctx.shadowBlur=30;for(let k=0;k<4;k++){ctx.strokeStyle=k%2?'#ff9b68':'#fff0a8';ctx.lineWidth=6-k;ctx.beginPath();ctx.arc(0,0,16+p*(58+k*16),0,Math.PI*2);ctx.stroke();}ctx.restore();}if(e.type==='demon-charge'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.globalCompositeOperation='lighter';ctx.shadowColor='#ff2410';ctx.shadowBlur=24;const pulse=.5+.5*Math.sin(performance.now()/48);ctx.fillStyle='rgba(255,35,12,'+(.12+.22*pulse)+')';ctx.beginPath();ctx.arc(0,0,18+8*pulse,0,Math.PI*2);ctx.fill();for(let k=0;k<10;k++){const a=k*Math.PI/5+performance.now()/170;const r=17+(1-p)*12;ctx.strokeStyle=k%2?'rgba(255,205,105,.9)':'rgba(255,55,18,.95)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+10),Math.sin(a)*(r+10));ctx.stroke();}ctx.restore();}if(e.type==='demon-flash'){const p=e.life/e.max;ctx.save();ctx.globalCompositeOperation='screen';ctx.fillStyle='rgba(255,12,8,'+(.9*p)+')';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.restore();}if(e.type==='kangaroo-charge'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.dy,e.dx));ctx.shadowColor='#ffd36a';ctx.shadowBlur=22;ctx.strokeStyle='rgba(255,224,135,.9)';ctx.lineWidth=4;for(let k=0;k<5;k++){ctx.beginPath();ctx.moveTo(-30-k*12,-20+k*10);ctx.lineTo(22+p*45-k*7,-20+k*10);ctx.stroke();}ctx.restore();}if(e.type==='kangaroo-impact'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.dy,e.dx));ctx.shadowColor='#fff0a8';ctx.shadowBlur=32;for(let k=0;k<9;k++){ctx.rotate(Math.PI*2/9);ctx.strokeStyle=k%2?'#fff4c2':'#ffb83d';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(35+p*48,0);ctx.stroke();}ctx.beginPath();ctx.arc(0,0,18+p*48,0,Math.PI*2);ctx.stroke();ctx.restore();}if(e.type==='kangaroo-wall'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.shadowColor='#ffcf62';ctx.shadowBlur=26;for(let k=0;k<3;k++){ctx.strokeStyle=k===1?'#fff0b0':'#ffbd55';ctx.lineWidth=6-k;ctx.beginPath();ctx.arc(0,0,15+p*(62+k*18),0,Math.PI*2);ctx.stroke();}ctx.restore();}if(e.type==='rewind-burst'&&e.paths){const progress=1-e.life/e.max;e.paths.forEach(pathData=>{const pts=pathData.points;if(pts.length<2)return;const backIndex=Math.max(0,Math.floor(progress*(pts.length-1)));ctx.strokeStyle=pathData.color||'#8cecff';ctx.lineWidth=3;ctx.globalAlpha*=0.72;ctx.shadowColor='#65dfff';ctx.shadowBlur=16;ctx.beginPath();for(let j=pts.length-1;j>=backIndex;j--){const pt=pts[j];if(j===pts.length-1)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);}ctx.stroke();ctx.shadowBlur=0;});ctx.globalAlpha=Math.max(0,e.life/e.max);ctx.strokeStyle='#b8f5ff';ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,24+progress*115,0,Math.PI*2);ctx.stroke();} if(e.type==='heal'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(p*2.4);ctx.shadowColor='#8cffb2';ctx.shadowBlur=24;for(let k=0;k<16;k++){ctx.rotate(Math.PI/8);ctx.strokeStyle=k%2?'rgba(124,255,170,.9)':'rgba(255,239,150,.95)';ctx.lineWidth=3+(1-p)*2;ctx.beginPath();ctx.moveTo(18+p*8,0);ctx.lineTo(48+p*105,0);ctx.stroke();}for(let ring=0;ring<3;ring++){ctx.beginPath();ctx.strokeStyle=ring===0?'#a6ffc1':'#f4ffb0';ctx.lineWidth=4-ring;ctx.arc(0,0,18+p*(70+ring*27),0,Math.PI*2);ctx.stroke();}ctx.font='bold 27px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#eaffb0';ctx.fillText('+HP',0,-35-p*25);ctx.restore();} if(e.type==='elephant-push'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.dy,e.dx));ctx.strokeStyle='#f4e4b0';ctx.shadowColor='#fff1bd';ctx.shadowBlur=18;ctx.lineWidth=5;for(let k=0;k<4;k++){ctx.globalAlpha*=0.8;ctx.beginPath();ctx.moveTo(-22-k*13,-15+k*10);ctx.lineTo(20+p*75-k*10,-15+k*10);ctx.stroke();}ctx.restore();} if(e.type==='elephant-wall'){const p=1-e.life/e.max;ctx.save();ctx.strokeStyle='#ffe9ad';ctx.shadowColor='#fff0c4';ctx.shadowBlur=18;ctx.lineWidth=6;ctx.beginPath();ctx.arc(e.x,e.y,18+p*48,0,Math.PI*2);ctx.stroke();ctx.restore();} if(e.type==='orange-stop'){const p=1-e.life/e.max;ctx.save();ctx.globalAlpha*=0.8;ctx.translate(e.x,e.y);ctx.rotate(p*0.7);ctx.strokeStyle='#ffcf45';ctx.shadowColor='#ff9d00';ctx.shadowBlur=28;for(let k=0;k<12;k++){ctx.rotate(Math.PI/6);ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(24+p*12,0);ctx.lineTo(70+p*75,0);ctx.stroke();}ctx.beginPath();ctx.arc(0,0,32+p*145,0,Math.PI*2);ctx.lineWidth=8;ctx.stroke();ctx.restore();} if(e.type==='orange-stop-flash'){ctx.fillStyle='rgba(255,205,65,'+(0.22*(e.life/e.max))+')';ctx.fillRect(0,0,canvas.width,canvas.height);} if(e.type==='time-skip'){const p=1-e.life/e.max;ctx.save();ctx.translate(e.x,e.y);ctx.rotate(-p*5);ctx.strokeStyle='#68ff9a';ctx.shadowColor='#21ff75';ctx.shadowBlur=25;for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(0,0,28+p*100,16+p*55,k*Math.PI/4,0,Math.PI*2);ctx.lineWidth=5-k*0.6;ctx.stroke();}ctx.fillStyle='rgba(45,255,120,.13)';ctx.beginPath();ctx.arc(0,0,25+p*95,0,Math.PI*2);ctx.fill();ctx.restore();ctx.save();ctx.globalAlpha*=0.7;ctx.strokeStyle='#54ff83';ctx.shadowColor='#25ff62';ctx.shadowBlur=12;ctx.lineWidth=2;for(let g=0;g<9;g++){const gy=((g*83+p*canvas.height*1.7)%canvas.height);ctx.beginPath();ctx.moveTo((g%2)*35,gy);ctx.lineTo(canvas.width-(g%3)*48,gy+(g%2?3:-3));ctx.stroke();}ctx.restore();} if(e.type==='time-skip-flash'){ctx.fillStyle='rgba(50,255,125,'+(0.18*(e.life/e.max))+')';ctx.fillRect(0,0,canvas.width,canvas.height);} ctx.strokeStyle=e.type==='trex-roar'?'#ffb52e':e.type==='dragon-roar'?'#ff3030':e.type==='roar'?'#ff9d35':e.type==='heal'?'#7cf7a2':'#ffd36b';ctx.lineWidth=(e.type==='trex-roar'||e.type==='dragon-roar')?12:e.type==='lasso'?4:7;ctx.beginPath();const progress=1-e.life/e.max;const radius=(e.type==='trex-roar'||e.type==='dragon-roar')?progress*(CONFIG.arenaRadius*2+35):progress*(e.type==='lasso'?55:e.type==='roar'?112:CONFIG.eggBlastRadius);ctx.arc(e.x,e.y,radius,0,Math.PI*2);ctx.stroke();if(e.type==='trex-roar'||e.type==='dragon-roar'){ctx.globalAlpha*=0.45;ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,Math.max(0,radius-22),0,Math.PI*2);ctx.stroke();}ctx.restore();e.life-=16.67});effects=effects.filter(e=>e.life>0);carrots.forEach(c=>{ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.atan2(c.vy,c.vx));ctx.font='20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🥕',0,0);ctx.restore()});
+ fighters.forEach(f=>{if(!f.alive||f.inSpace)return;ctx.save();if(f.type==='kangaroo'&&performance.now()<(f.kangarooChargingUntil||0)){const shake=performance.now()/24;ctx.translate(Math.sin(shake*2.7)*3.2,Math.cos(shake*3.1)*2.5);}if(f.type==='demon'&&performance.now()<(f.demonChargingUntil||0)){const shake=performance.now()/19;ctx.translate(Math.sin(shake*3.1)*4,Math.cos(shake*2.6)*3);ctx.shadowColor='#ff3217';ctx.shadowBlur=32;}const canClone=f.type==='anthone'&&!f.splitDone&&anthoneCount[f.team]<CONFIG.anthoneMaxFamily;if(canClone){ctx.strokeStyle='#ffd36b';ctx.lineWidth=4;ctx.shadowColor='#ffd36b';ctx.shadowBlur=15;ctx.beginPath();ctx.arc(f.x,f.y,f.r+7,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;}const fighterColor=f.type==='froga'?frogaColor(f):f.color;ctx.shadowColor=fighterColor;ctx.shadowBlur=18;ctx.fillStyle=fighterColor;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.font=(f.type==='elephant'||f.type==='kangaroo')?'bold 38px system-ui':'bold 23px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';const emoji=f.type==='rabbit'?'🐰':f.type==='unicorn'?'🦄':f.type==='froga'?'🐸':f.type==='intruder'?'👾':f.type==='anthone'?'🐜':f.type==='ghost'?'👻':f.type==='cowboy'?'🤠':f.type==='unknown'?'👽':f.type==='snake'?'🐍':f.type==='tiger'?'🐯':f.type==='robo'?'🤖':f.type==='zombie'?'🧟':f.type==='reindeer'?'🦌':f.type==='puffer'?'🐡':f.type==='trex'?'🦖':f.type==='orange'?(f.orangeCat?'😼':'🐱'):f.type==='judge'?'🧑‍⚖️':f.type==='dragon'?'🐉':f.type==='elephant'?'🐘':f.type==='kangaroo'?'🦘':f.type==='demon'?'👹':(['🥚','🐣','🐥','🐓'][f.stage-1]);ctx.fillText(f.evolving?'💥':emoji,f.x,f.y+1);if(performance.now()<(f.stunUntil||0)||performance.now()<(f.kangarooChargingUntil||0)||performance.now()<(f.slowUntil||0)||performance.now()<(f.elephantSlowUntil||0)||performance.now()<(f.ghostSlowUntil||0)||performance.now()<(f.trexSlowUntil||0)||performance.now()<(f.dragonSlowUntil||0)||performance.now()<(f.rewindSlowUntil||0)){ctx.font='bold 11px system-ui';ctx.fillStyle='#fff';ctx.fillText(performance.now()<(f.stunUntil||0)?'STOP':(performance.now()<(f.kangarooWindupUntil||0)?'BERSIAP':(f.kangarooDashActive?'CHARGE!':(performance.now()<(f.elephantSlowUntil||0)?'ELEPHANT SLOW':(performance.now()<(f.dragonSlowUntil||0)?'DRAGON SLOW':(performance.now()<(f.rewindSlowUntil||0)?'TIME REWIND':(performance.now()<(f.trexSlowUntil||0)?'ROAR SLOW':'SLOW')))))),f.x,f.y+f.r+13);}if(f.type==='froga'){const st=Math.min(10,f.frogaStacks||0);ctx.font='bold 10px system-ui';ctx.fillStyle='#fff';ctx.fillText('STACK '+st+'/10 · '+Math.round(FROGA_SPEED_MULTIPLIERS[st]*100)+'% · '+FROGA_DAMAGE_BY_STACK[st]+' DMG',f.x,f.y+f.r+14);}if(canClone){ctx.font='bold 11px system-ui';ctx.fillStyle='#ffd36b';ctx.fillText('CLONE',f.x,f.y-f.r-13);}if(f.judgementMark){ctx.font='bold 12px system-ui';ctx.fillStyle='#ffe36b';ctx.fillText('⚖️ MARK',f.x,f.y-f.r-27);}if(f.abilitySuppressedByJudge){ctx.font='bold 11px system-ui';ctx.fillStyle='#ff8a9a';ctx.fillText('🔒 ABILITY SEALED',f.x,f.y+f.r+25);}
+ // Health bar individu melekat di atas kepala dan bergerak bersama karakter.
+ const barW=58,barH=7,barX=f.x-barW/2,barY=f.y-f.r-19;
+ const ratio=Math.max(0,Math.min(1,f.hp/(f.maxHP||1)));
+ const hpLabel=f.pufferBurst?Math.max(0,Math.ceil(f.hp))+'/'+f.maxHP+' HP · BURST':Math.max(0,Math.ceil(f.hp))+'/'+f.maxHP;
+ ctx.textAlign='center';ctx.textBaseline='bottom';ctx.font='bold 10px system-ui';
+ ctx.fillStyle='#ffffff';ctx.shadowColor='#000000';ctx.shadowBlur=3;
+ if(f.type==='unknown'&&!f.unknownSummoned){const remain=Math.max(0,CONFIG.unknownUfoDelay-(performance.now()-gameStartedAt));ctx.font='bold 11px system-ui';ctx.fillStyle='#9fe8ff';ctx.fillText('🛸 '+(remain<=0?'UFO SIAP':(remain/1000).toFixed(1)+'s'),f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.snakePoisons&&f.snakePoisons.length){ctx.font='bold 10px system-ui';ctx.fillStyle='#8dff9c';ctx.fillText('☠ POISON',f.x,barY-27);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='orange'){const remain=Math.max(0,(f.lastOrangeTimeStop||0)-performance.now());ctx.font='bold 11px system-ui';ctx.fillStyle='#ffd36b';ctx.fillText(f.orangeCat?'TIME STOP!':(remain<=0?'TIME STOP SIAP':'TIME STOP '+(remain/1000).toFixed(1)+'s'),f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='snake'){const remain=Math.max(0,f.lastSnakeSkip-performance.now());ctx.font='bold 11px system-ui';ctx.fillStyle='#8df7a2';ctx.fillText(remain<=0?'TIME SKIP SIAP':'TIME SKIP '+(remain/1000).toFixed(1)+'s',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='trex'){const remain=Math.max(0,(f.lastTRexRoar||0)-performance.now());ctx.font='bold 11px system-ui';ctx.fillStyle='#ffb52e';ctx.fillText(remain<=0?'ROAR SIAP':'ROAR '+(remain/1000).toFixed(1)+'s',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='elephant'){const reduction=Math.round(Math.max(0,Math.min(CONFIG.elephantDamageReductionMax,(1-f.hp/f.maxHP)*CONFIG.elephantDamageReductionMax))*100);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffe8b5';ctx.fillText('ARMOR '+reduction+'%',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='dragon'){const remain=Math.max(0,(f.lastDragonRoar||0)-performance.now());ctx.font='bold 11px system-ui';ctx.fillStyle='#ff6868';ctx.fillText(remain<=0?'ROAR SIAP':'ROAR '+(remain/1000).toFixed(1)+'s',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='demon'){const now=performance.now(),remain=Math.max(0,gameStartedAt+CONFIG.demonActivationDelay-now);ctx.font='bold 10px system-ui';ctx.fillStyle='#ff8a52';const label=now<(f.demonHellUntil||0)?'NERAKA '+((f.demonHellUntil-now)/1000).toFixed(1)+'s':(f.demonAbilityUsed?'NERAKA SELESAI':(remain<=0?'NERAKA SIAP': 'NERAKA '+(remain/1000).toFixed(1)+'s'));ctx.fillText(label,f.x,barY-14);if(now<(f.demonChargingUntil||0))ctx.fillText('CHARGING '+((f.demonChargingUntil-now)/1000).toFixed(1)+'s',f.x,barY-27);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='unicorn'){ctx.font='bold 10px system-ui';ctx.fillStyle=f.unicornRewindUsed?'#9fa9bb':'#b9e6ff';ctx.fillText(f.unicornRewindUsed?(f.unicornBuffed?'REWIND AKTIF · +90% DMG':'REWIND DIGUNAKAN'):'REWIND TERSEDIA',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='tiger'){ctx.font='bold 11px system-ui';ctx.fillStyle='#ffd36b';ctx.fillText((performance.now()<(f.tigerSpeedUntil||0)?'BOOST +190%':'SPEED NORMAL')+' · DMG '+(f.tigerDamageStacks||0)+'/15',f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='cowboy'){const remain=Math.max(0,CONFIG.cowboyPullEvery-(performance.now()-f.lastCowboyPull));const cd=remain<=0?'TARIK SIAP':'TARIK '+(remain/1000).toFixed(1)+'s';ctx.font='bold 11px system-ui';ctx.fillStyle='#ffd36b';ctx.fillText(cd,f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ if(f.type==='reindeer'){const remain=Math.max(0,(f.lastReindeerHeal||0)-performance.now());const uses=f.reindeerHealsUsed||0;const cd=uses>=CONFIG.reindeerHealUses?'HEAL HABIS ('+uses+'/4)':(remain<=0?'HEAL SIAP':'HEAL '+(remain/1000).toFixed(1)+'s')+' · '+uses+'/4';ctx.font='bold 11px system-ui';ctx.fillStyle='#7cf7a2';ctx.fillText(cd,f.x,barY-14);ctx.font='bold 10px system-ui';ctx.fillStyle='#ffffff';}
+ ctx.fillText(hpLabel,f.x,barY-2);ctx.shadowBlur=0;
+ ctx.fillStyle='rgba(8,13,24,.92)';ctx.fillRect(barX-1,barY-1,barW+2,barH+2);
+ ctx.fillStyle=ratio>0.5?'#52e39a':ratio>0.25?'#ffd36b':'#ff596e';
+ ctx.fillRect(barX,barY,barW*ratio,barH);
+ ctx.strokeStyle=f.team===1?'#55d9e8':'#ff7899';ctx.lineWidth=1.5;ctx.strokeRect(barX-1,barY-1,barW+2,barH+2);
+ ctx.restore()});ctx.restore();
+ if(finished){
+  ctx.save();ctx.fillStyle='rgba(3,8,20,.28)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  victoryConfetti.forEach(c=>{ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.rot);ctx.fillStyle='hsl('+c.hue+',95%,62%)';ctx.fillRect(-c.size/2,-c.size/2,c.size,c.size*1.8);ctx.restore();});
+  const pulse=1+Math.sin(performance.now()/180)*.045;ctx.translate(canvas.width/2,canvas.height/2);ctx.scale(pulse,pulse);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 76px system-ui';ctx.lineWidth=12;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(victoryTeam?'🏆 VICTORY!':'🤝 DRAW!',0,-8);ctx.fillStyle=victoryTeam?'#ffe16b':'#dceaff';ctx.fillText(victoryTeam?'🏆 VICTORY!':'🤝 DRAW!',0,-8);ctx.font='bold 30px system-ui';ctx.fillStyle='#ffffff';ctx.fillText(victoryTeam?'TEAM '+victoryTeam+' WINS!':'KEDUA-DUA PASUKAN SAMA KUAT!',0,55);ctx.restore();
+ }
+}
+function loop(now){
+ if(!running)return;
+ if(onlineBattle&&!onlineHost){if(netSnapshot){applyNetworkSnapshot(netSnapshot);}draw();raf=requestAnimationFrame(loop);return;}
+ if(finished){
+  const dt=last?Math.min(2,(now-last)/16.67):1;last=now;
+  fighters.forEach(f=>{if(!f.alive||f.inSpace)return;f.x+=f.vx*dt;f.y+=f.vy*dt;reflectWall(f);});
+  victoryConfetti.forEach(c=>{c.x+=c.vx*dt;c.y+=c.vy*dt;c.rot+=c.spin*dt;if(c.y>canvas.height+15){c.y=-10;c.x=Math.random()*canvas.width;}});
+  draw();raf=requestAnimationFrame(loop);return;
+ }
+ if(!paused){
+  if(!last)last=now;let dt=Math.min(2,(now-last)/16.67);last=now;
+  endOrangeTimeStop(now);
+  judgeAbilitySeal(now);
+  if(orangeTimeStopOwnerUid===null){updateEvolution(now);}
+  const stopping=orangeTimeStopOwnerUid!==null&&now<orangeTimeStopUntil;
+  const stopOwner=stopping?fighters.find(f=>f.uid===orangeTimeStopOwnerUid):null;
+  fighters.forEach(f=>{
+   if(!f.alive||f.evolving||f.inSpace)return;
+   if(stopping&&f.uid!==orangeTimeStopOwnerUid)return;
+   updateFighterSize(f);
+   if(f.pulledUntil>now){const cowboy=fighters.find(o=>o.uid===f.pullFromUid&&o.alive);if(cowboy){const px=cowboy.x-f.x,py=cowboy.y-f.y,plen=Math.hypot(px,py)||1;f.vx=px/plen*CONFIG.speed*CONFIG.cowboyPullSpeedMultiplier;f.vy=py/plen*CONFIG.speed*CONFIG.cowboyPullSpeedMultiplier;}}else{f.pullFromUid=null;}
+   if(f.type==='snake'&&f.snakeResumeAt&&now>=f.snakeResumeAt){f.vx=f.snakeResumeVx||CONFIG.speed;f.vy=f.snakeResumeVy||0;f.snakeResumeAt=0;}
+   if((f.type==='kangaroo'&&f.kangarooDashActive)||f.dragonPush){/* kedudukan charge/knockback dikawal oleh updater per-frame */}else if(now>=(f.stunUntil||0)){const slow=Math.min(now<(f.slowUntil||0)?0.70:1,now<(f.ghostSlowUntil||0)?CONFIG.ghostSlowMultiplier:1,now<(f.trexSlowUntil||0)?0.25:1,now<(f.dragonSlowUntil||0)?0.20:1,now<(f.elephantSlowUntil||0)?0.20:1,now<(f.rewindSlowUntil||0)?0.16:1,now<(f.demonChargingUntil||0)?0.10:1);f.x+=f.vx*dt*slow;f.y+=f.vy*dt*slow;reflectWall(f);keepFighterSpeed(f);}
+   fireCarrot(f,now);fireEggoIII(f,now);fireRooster(f,now);fireAnthone(f,now);fireUnicorn(f,now);fireUnknown(f,now);fireRobo(f,now);fireDragon(f,now);dragonRoar(f,now);fireSnake(f,now);firePuffer(f,now);reindeerHeal(f,now);trexRoar(f,now);tigerRoar(f,now);fireCowboyPull(f,now);kangarooCharge(f,now);updateDemonHell(f,now);
+   if(f.type==='orange'){activateOrangeTimeStop(f,now);fireOrangeYarn(f,now);}
+  });
+  updateElephantPushes(now,dt);updateKangarooDash(now,dt);updateKangarooPushes(now,dt);updateDragonPushes(now,dt);
+  fighters.forEach(f=>{if(f.type==='ghost'&&(!stopping||f.uid===orangeTimeStopOwnerUid))f.ghostTouching=false;});
+  fighters.forEach(updateFighterSize);
+  for(let i=0;i<fighters.length;i++)for(let j=i+1;j<fighters.length;j++){
+   const a=fighters[i],b=fighters[j];
+   if(stopping&&a.uid!==orangeTimeStopOwnerUid&&b.uid!==orangeTimeStopOwnerUid)continue;
+   if(stopping){const moving=a.uid===orangeTimeStopOwnerUid?a:b,still=moving===a?b:a;
+    if(moving.alive&&still.alive&&!still.evolving&&!still.inSpace){
+     const dx=still.x-moving.x,dy=still.y-moving.y,dist=Math.hypot(dx,dy),min=moving.r+still.r;
+     if(dist<min){
+      const nx=dist?dx/dist:1,ny=dist?dy/dist:0;
+      // Orange melantun daripada semua karakter; karakter lain kekal beku.
+      moving.x=still.x-nx*(min+0.75);moving.y=still.y-ny*(min+0.75);
+      const toward=moving.vx*nx+moving.vy*ny;
+      if(toward>0){moving.vx-=2*toward*nx;moving.vy-=2*toward*ny;keepFighterSpeed(moving);}
+      // Rakan sepasukan hanya menjadi permukaan lantunan, tiada damage.
+      if(still.team!==moving.team&&now-moving.lastHit>CONFIG.collisionCooldown){
+       const dmg=meleeCollisionDamage(moving,moving.frogaStacks||0);
+       if(dmg>0){damageFighter(still,dmg,moving.team,'melee',moving);moving.lastHit=now;if(!finished)$('status').textContent='😼 Orange melantun dan menyerang musuh ketika Time Stop! '+dmg+' damage.';}
+      }
+     }
+    }
+   }else collide(a,b,now);
+  }
+  if(stopping){
+   // Hanya benang Orange bergerak; semua projektil lain dibekukan.
+   for(let i=shots.length-1;i>=0;i--){const q=shots[i];if(q.kind!=='orange-yarn')continue;const target=fighters.find(f=>f.uid===q.targetUid&&f.alive&&!f.evolving&&!f.inSpace);if(!target||target.team===q.owner){shots.splice(i,1);continue;}q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt*16.67;if(Math.hypot(q.x-target.x,q.y-target.y)<target.r+9){const result=damageFighter(target,q.damage,q.owner,'orange-yarn',stopOwner);if(result===true&&!finished)$('status').textContent='🧶 Orange mengenai musuh! 15 damage.';shots.splice(i,1);continue;}if(q.life<=0)shots.splice(i,1);}
+  }else{
+   fighters.forEach(f=>updateGhostGrowth(f,dt));updateDragonBurns(now);updateSnakePoisons(now);recordUnicornStates(now);updateCarrots(dt);updateShots(dt);updateAntShots(dt);updateUnicornShots(dt,now);collideUFOs(now);updateUFOs(now);rememberPositions(now);
+  }
+  resolveWinnerCheck();
+  draw();
+ }
+ if(onlineBattle&&onlineHost&&now-lastNetSend>33){lastNetSend=now;sendNetworkSnapshot(now);}
+ raf=requestAnimationFrame(loop);
+}
+function sendNetworkSnapshot(now){if(!window.BDOnline?.sendSnapshot)return;try{window.BDOnline.sendSnapshot({t:now,gameMode,fighters,carrots,shots,antShots,unicornShots,ufos,effects,anthoneCount,teamRoarBuff,nextUid,running,finished,victoryTeam,victoryStartedAt,victoryConfetti,orangeTimeStopOwnerUid,orangeTimeStopUntil,orangeTimeStopStartedAt,trexShakeUntil});}catch(e){console.warn('Snapshot gagal dihantar',e);}}
+function applyNetworkSnapshot(s){if(!s)return;try{gameMode=s.gameMode||gameMode;fighters=s.fighters||fighters;carrots=s.carrots||[];shots=s.shots||[];antShots=s.antShots||[];unicornShots=s.unicornShots||[];ufos=s.ufos||[];effects=s.effects||[];anthoneCount=s.anthoneCount||{1:0,2:0};teamRoarBuff=s.teamRoarBuff||teamRoarBuff;nextUid=s.nextUid||nextUid;finished=!!s.finished;victoryTeam=s.victoryTeam??null;victoryStartedAt=s.victoryStartedAt||0;victoryConfetti=s.victoryConfetti||[];orangeTimeStopOwnerUid=s.orangeTimeStopOwnerUid??null;orangeTimeStopUntil=s.orangeTimeStopUntil||0;orangeTimeStopStartedAt=s.orangeTimeStopStartedAt||0;trexShakeUntil=s.trexShakeUntil||0;updateHUD();}catch(e){console.warn('Snapshot tidak sah',e);}}
+$('start').onclick=()=>{if(window.BDOnline?.requestGameStart){window.BDOnline.requestGameStart();return;}startGame();};
+$('surrender').onclick=()=>{if(finished)return;if(!confirm('Betul-betul mahu surrender? Perlawanan akan tamat.'))return;if(window.BDOnline&&window.BDOnline.surrender){window.BDOnline.surrender();}else{finish(null);$('status').textContent='🏳️ Pemain menyerah kalah.';}};
+$('restart').onclick=startGame;
+$('change').onclick=()=>{running=false;cancelAnimationFrame(raf);$('gamePanel').classList.add('hidden');$('setupPanel').classList.remove('hidden')};
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(()=>{
+ const $id=id=>document.getElementById(id), status=$id('onlineStatus'), roomArea=$id('roomArea');
+ let socket=null,currentRoom=null,ready=false,isHost=false,team=0,onlineSelecting=false,pickReady=false,opponentPicks=[];
+ const selectIds={1:['char1a','char1b'],2:['char2a','char2b']};
+ const allChars=['rabbit','unicorn','froga','intruder','eggo','anthone','ghost','cowboy','unknown','snake','tiger','robo','zombie','orange','judge','reindeer','puffer','trex','dragon','elephant','kangaroo','demon'];
+ const say=t=>status.textContent=t;
+ function connect(){if(socket?.connected)return socket;if(typeof io!=='function'){say('Socket.IO tidak dijumpai. Buka website melalui server BOUNCE DUEL.');return null;}socket=io();
+  socket.on('connect',()=>say('Disambungkan ke server. Cipta room atau masukkan kod kawan.'));
+  socket.on('connect_error',()=>say('Tidak dapat menyambung ke server.'));
+  socket.on('disconnect',()=>say('Sambungan terputus.'));
+  socket.on('room:update',renderRoom);
+  socket.on('room:notice',d=>say(d.message||'Makluman room.'));
+  socket.on('room:starting',d=>{onlineSelecting=true;roomArea.classList.add('hidden');$id('setupPanel').classList.remove('hidden');$id('onlinePanel').classList.remove('hidden');$id('start').textContent='SAHKAN PILIHAN';$id('onlinePickHint').textContent='Player '+team+': pilih karakter pasukan anda. Pilihan Player '+(team===1?2:1)+' dikunci dan tidak boleh digunakan.';applyOwnership();say('Room bermula. Player '+team+', sila pilih karakter.');});
+  socket.on('room:picks',d=>{opponentPicks=d.picks?.[team===1?2:1]||[];applyUniqueOptions();say('Pilihan karakter disegerakkan. Pastikan pilihan anda lengkap.');});
+  socket.on('room:gameStart',d=>{if(d.picks){applyPicks(d.picks);}onlineBattle=true;onlineHost=isHost;onlineTeam=team;$id('setupPanel').classList.add('hidden');$id('restart').classList.add('hidden');$id('change').classList.add('hidden');startGame();$('status').textContent='ONLINE MATCH · Room '+(currentRoom?.code||'')+' · Player '+team;});
+  socket.on('room:snapshot',d=>{if(!isHost&&d?.state)netSnapshot=d.state;});
+  socket.on('room:ended',d=>{if(!finished){if(d.winnerTeam){finish(d.winnerTeam);}else finish(null);$('status').textContent=d.message||'Perlawanan tamat.';}onlineBattle=false;});
+  return socket;}
+ function call(event,payload){return new Promise(resolve=>{const s=connect();if(!s)return resolve({ok:false,error:'Server belum tersedia.'});s.emit(event,payload||{},resolve);});}
+ function renderRoom(room){currentRoom=room;$id('roomArea').classList.remove('hidden');$id('roomCodeDisplay').textContent=room.code;isHost=room.hostId===socket.id;const p=room.players.find(x=>x.id===socket.id);team=p?.team||0;
+  $id('roomPlayers').innerHTML=room.players.map(p=>`<div class="online-player"><span>PLAYER ${p.team} · ${escapeText(p.name)} ${p.host?'👑 HOST':''}</span><b>${p.ready?'✅ READY':'⏳ WAITING'}</b></div>`).join('');
+  $id('startRoom').disabled=!isHost||room.players.length!==2||!room.players.every(p=>p.ready);$id('startRoom').textContent=isHost?'MULA ROOM':'MENUNGGU HOST';$id('readyRoom').textContent=ready?'BATAL READY':'SAYA READY';say('Room '+room.code+' · '+room.mode+' · '+room.players.length+'/2 pemain. Anda ialah Player '+team+'.');}
+ function escapeText(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function ownIds(){return selectIds[team]||[];}function opponentIds(){return selectIds[team===1?2:1]||[];}
+ function ownPicks(){return ownIds().slice(0,currentRoom?.mode==='2v2'?2:1).map(id=>$id(id).value);}
+ function applyOwnership(){if(!onlineSelecting||!team)return;for(const id of [...selectIds[1],...selectIds[2]])$id(id).disabled=!ownIds().includes(id)||!selectIds[team].includes(id);$id('modeSelect').disabled=true;setMode(currentRoom?.mode||'1v1');applyUniqueOptions();}
+ function applyUniqueOptions(){const banned=new Set(opponentPicks);const mine=ownPicks();for(const id of [...selectIds[1],...selectIds[2]]){const el=$id(id);if(!el)continue;for(const opt of el.options){const usedElsewhere=[...selectIds[1],...selectIds[2]].some(other=>other!==id&&$id(other)?.value===opt.value);opt.disabled=(banned.has(opt.value)||usedElsewhere)&&opt.value!==el.value;}}}
+ function sendPicks(){if(!onlineSelecting||!team)return;const chars=ownPicks();call('room:pick',{chars}).then(r=>{if(!r.ok)say(r.error);});}
+ function applyPicks(picks){for(const t of [1,2]){const ids=selectIds[t],arr=picks[t]||[];ids.forEach((id,i)=>{if(arr[i]&&$id(id))$id(id).value=arr[i];});}updateRarityPreviews();}
+ for(const id of [...selectIds[1],...selectIds[2]])$id(id).addEventListener('change',()=>{applyUniqueOptions();sendPicks();});
+ $id('createRoom').onclick=async()=>{const r=await call('room:create',{name:$id('onlineName').value,mode:$id('onlineMode').value});if(!r.ok)say(r.error);else{ready=true;renderRoom(r.room);}};
+ $id('joinRoom').onclick=async()=>{const r=await call('room:join',{name:$id('onlineName').value,code:$id('joinCode').value});if(!r.ok)say(r.error);else{ready=false;renderRoom(r.room);}};
+ $id('readyRoom').onclick=()=>{ready=!ready;socket?.emit('room:ready',{ready});};
+ $id('startRoom').onclick=async()=>{const r=await call('room:start');if(!r.ok)say(r.error);};
+ $id('leaveRoom').onclick=()=>{socket?.emit('room:leave');currentRoom=null;ready=false;onlineSelecting=false;onlineBattle=false;$id('restart').classList.remove('hidden');$id('change').classList.remove('hidden');$id('start').textContent='MULA GAME';roomArea.classList.add('hidden');say('Anda telah keluar daripada room.');};
+ $id('onlineMode').onchange=async e=>{if(currentRoom&&isHost){const r=await call('room:setMode',{mode:e.target.value});if(!r.ok)say(r.error);}};
+ window.BDOnline={surrender:()=>socket?.emit('room:surrender'),sendSnapshot:state=>socket?.emit('room:snapshot',{state}),requestGameStart:()=>{if(!onlineSelecting)return startGame();const chars=ownPicks();call('room:gameReady',{chars}).then(r=>{if(!r.ok)say(r.error);else say('Pilihan dihantar. Menunggu pemain satu lagi...');});}};
+ connect();
+})();
+</script>
+<script>
+(()=>{
+ const $id=id=>document.getElementById(id);
+ const status=$id('onlineStatus'), roomArea=$id('roomArea');
+ let socket=null, currentRoom=null, ready=false, isHost=false;
+ const say=t=>{status.textContent=t};
+ function connect(){
+  if(socket?.connected)return socket;
+  if(typeof io!=='function'){say('Socket.IO client tidak dijumpai. Pastikan website dibuka melalui server BOUNCE DUEL, bukan fail HTML terus.');return null;}
+  socket=io();
+  socket.on('connect',()=>say('Disambungkan ke BOUNCE DUEL server. Cipta room atau masukkan kod kawan.'));
+  socket.on('connect_error',()=>say('Tidak dapat menyambung ke server. Semak URL server dan sambungan internet.'));
+  socket.on('disconnect',()=>say('Sambungan ke server terputus.'));
+  socket.on('room:update',renderRoom);
+  socket.on('room:notice',d=>say(d.message||'Makluman room.'));
+  socket.on('room:starting',d=>say('Kedua-dua pemain bersedia! Room '+d.code+' ('+d.mode+') telah dimulakan pada server. Penyegerakan gameplay online masih dalam fasa pembangunan seterusnya; perlawanan belum dimainkan secara online lagi.'));
+  return socket;
+ }
+ function call(event,payload){return new Promise(resolve=>{const s=connect();if(!s)return resolve({ok:false,error:'Server belum tersedia.'});s.emit(event,payload||{},resolve);});}
+ function renderRoom(room){
+  currentRoom=room;roomArea.classList.remove('hidden');$id('roomCodeDisplay').textContent=room.code;
+  isHost=room.hostId===socket.id;
+  $id('roomPlayers').innerHTML=room.players.map((p,i)=>`<div class="online-player"><span>${i+1}. ${escapeText(p.name)} ${p.host?'👑 HOST':''}</span><b>${p.ready?'✅ READY':'⏳ WAITING'}</b></div>`).join('');
+  $id('startRoom').disabled=!isHost||room.players.length!==2||!room.players.every(p=>p.ready);
+  $id('startRoom').textContent=isHost?'MULA ROOM':'MENUNGGU HOST';
+  $id('readyRoom').textContent=ready?'BATAL READY':'SAYA READY';
+  say('Room '+room.code+' · '+room.mode+' · '+room.players.length+'/2 pemain. '+(isHost?'Anda ialah host.':'Anda menyertai room.'));
+ }
+ function escapeText(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ $id('createRoom').onclick=async()=>{const r=await call('room:create',{name:$id('onlineName').value,mode:$id('onlineMode').value});if(!r.ok)say(r.error);else{ready=true;renderRoom(r.room);}};
+ $id('joinRoom').onclick=async()=>{const r=await call('room:join',{name:$id('onlineName').value,code:$id('joinCode').value});if(!r.ok)say(r.error);else{ready=false;renderRoom(r.room);}};
+ $id('readyRoom').onclick=()=>{ready=!ready;socket?.emit('room:ready',{ready});};
+ $id('startRoom').onclick=async()=>{const r=await call('room:start');if(!r.ok)say(r.error);};
+ $id('leaveRoom').onclick=()=>{socket?.emit('room:leave');currentRoom=null;ready=false;roomArea.classList.add('hidden');say('Anda telah keluar daripada room.');};
+ $id('onlineMode').onchange=async e=>{if(currentRoom&&isHost){const r=await call('room:setMode',{mode:e.target.value});if(!r.ok)say(r.error);}};
+ connect();
+})();
+</script>
+
+</body></html>
